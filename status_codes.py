@@ -15,7 +15,7 @@ DIR_OPEN_PREV = 'Directory changed to previous directory'
 DIR_OPEN_ROOT = 'Already in root directory'
 
 DIR_MAKE_EXISTS = 'Directory to create already exists'
-DIR_MAKE_OK = 'Directory successfuly created'
+DIR_MAKE_OK = 'Directory successfully created'
 
 DIR_DELETE_NOT_EXIST = 'Directory to delete does not exist'
 DIR_DELETE_HAS_FILES = 'Directory to delete has files or directories'
