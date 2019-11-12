@@ -14,6 +14,56 @@ class ClientListener(Thread):
         self.sock = sock
         self.name = name
 
+    def create_empty_file(self):
+
+        file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
+
+        if file_name_size is None:
+            self._close()
+            print('Error during file name size reading.')
+            return
+
+        file_name = self.sock.recv(file_name_size).decode('UTF-8')
+
+        print("FIIIILE" + file_name)
+
+        if os.path.exists(file_name):
+            print('Error: file {0} already exitsts.'.format(file_name))
+            return
+
+        else:
+            way = file_name.split('/')
+            file_name = way.pop()
+            path = ''
+            for el in way:
+                path += el
+                path += '/'
+            if os.path.exists(path):
+                open(file_name + 'new', 'a').close()
+                print("Created {0} empty file.".format(file_name))
+            else:
+                print("Error: No such directory {0}".format(path))
+                return
+
+    def remove_file(self):
+
+        file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
+
+        if file_name_size is None:
+            self._close()
+            print('Error during file name size reading.')
+            return
+
+        file_name = self.sock.recv(file_name_size).decode('UTF-8')
+
+        if os.path.exists(file_name):
+            os.remove(file_name)
+            print("File {0} removed.".format(file_name))
+
+        else:
+            print('Error: No such file in directory.')
+            return
+
     def _close(self):
         clients.remove(self.sock)
         self.sock.close()
@@ -59,37 +109,39 @@ class ClientListener(Thread):
             print(file_name + ' received.')
 
     def run(self):
-        file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
+        # file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
+        #
+        # if file_name_size is None:
+        #     self._close()
+        #     print('Error during file name size reading.')
+        #     return
+        #
+        # file_size = int.from_bytes(bytes=self.sock.recv(64), byteorder='big', signed=False)
+        #
+        # if file_size is None:
+        #     self._close()
+        #     print('Error during file size reading.')
+        #     return
+        #
+        # file_name = self.sock.recv(file_name_size).decode('UTF-8')
+        #
+        # with open(file_name, 'wb') as sw:
+        #
+        #     received_size = 0
+        #
+        #     while received_size < file_size:
+        #         buffer = min(file_size - received_size, BUFFER_SIZE)
+        #         file = self.sock.recv(buffer)
+        #         received_size += buffer
+        #         if file is None:
+        #             self._close()
+        #             print('Error during file transfer.')
+        #             return
+        #         sw.write(file)
+        #
+        #     print(file_name + ' received.')
 
-        if file_name_size is None:
-            self._close()
-            print('Error during file name size reading.')
-            return
-
-        file_size = int.from_bytes(bytes=self.sock.recv(64), byteorder='big', signed=False)
-
-        if file_size is None:
-            self._close()
-            print('Error during file size reading.')
-            return
-
-        file_name = self.sock.recv(file_name_size).decode('UTF-8')
-
-        with open(file_name, 'wb') as sw:
-
-            received_size = 0
-
-            while received_size < file_size:
-                buffer = min(file_size - received_size, BUFFER_SIZE)
-                file = self.sock.recv(buffer)
-                received_size += buffer
-                if file is None:
-                    self._close()
-                    print('Error during file transfer.')
-                    return
-                sw.write(file)
-
-            print(file_name + ' received.')
+        self.create_empty_file()
 
 
 def main():

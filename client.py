@@ -17,9 +17,10 @@ def main():
         file_name = sys.argv[i]
         encoded_file_name = file_name.encode('UTF-8')
 
-        if not os.path.exists(file_name):
-            print('File does not exist.')
-            return
+        # if not os.path.exists(file_name):
+        #     print(file_name)
+        #     print('File does not exist.')
+        #     return
 
         file_size = os.path.getsize(file_name)
         encoded_file_name_size = len(encoded_file_name)
@@ -30,17 +31,17 @@ def main():
 
         sent_file_size = 0
 
-        with open(file_name, 'rb') as sr:
-            print(file_name)
-            while sent_file_size <= file_size:
-                sock.send(sr.read(BUFFER_SIZE))
-                sent_file_size += BUFFER_SIZE
-
-                percentage = int(100 * sent_file_size / file_size)
-                if percentage > 100:
-                    percentage = 100
-
-                print(str(percentage) + '%')
+        # with open(file_name, 'rb') as sr:
+        #     print(file_name)
+        #     while sent_file_size <= file_size:
+        #         sock.send(sr.read(BUFFER_SIZE))
+        #         sent_file_size += BUFFER_SIZE
+        #
+        #         percentage = int(100 * sent_file_size / file_size)
+        #         if percentage > 100:
+        #             percentage = 100
+        #
+        #         print(str(percentage) + '%')
 
 
 if __name__ == "__main__":
