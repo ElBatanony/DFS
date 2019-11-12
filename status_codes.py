@@ -15,3 +15,4 @@ DIR_DELETE_OK = 'Directory successfully deleted'
 
 CODE_WRITE_FILE = 2
 CODE_READ_FILE = 3
+CODE_COPY_FILE = 4

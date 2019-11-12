@@ -2,17 +2,14 @@ import os
 import socket
 import sys
 
-from constants import BUFFER_SIZE
+from receiver import receive_file
+from sender import send_file_name, send_file
 from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
 from web_format_converter import int32_to_web, int64_to_web, web_to_int
 
 
 def read_file(sock, file_name):
-    encoded_file_name = file_name.encode('UTF-8')
-    encoded_file_name_size = len(encoded_file_name)
-
-    sock.send(int32_to_web(encoded_file_name_size))
-    sock.send(encoded_file_name)
+    send_file_name(sock, file_name)
 
     code = web_to_int(sock.recv(32))
 
@@ -21,55 +18,21 @@ def read_file(sock, file_name):
         print('Error with code %d' % code)
         return
 
-    file_size = web_to_int(sock.recv(64))
-
-    with open(file_name, 'wb') as sw:
-
-        received_size = 0
-
-        while received_size < file_size:
-            buffer = min(file_size - received_size, BUFFER_SIZE)
-            file = sock.recv(buffer)
-            received_size += buffer
-            if file is None:
-                sock.close()
-                print('Error during file transfer.')
-                return
-            sw.write(file)
-
-        print(file_name + ' received.')
+    try:
+        receive_file(sock, file_name)
+    except Exception as e:
+        print(str(e))
+        sock.close()
+        return
 
 
 def write_file(sock, file_name):
-    encoded_file_name = file_name.encode('UTF-8')
-
     if not os.path.exists(file_name):
         print('File does not exist.')
         return
 
-    file_size = os.path.getsize(file_name)
-    encoded_file_name_size = len(encoded_file_name)
-
-    sock.send(int32_to_web(encoded_file_name_size))
-    sock.send(int64_to_web(file_size))
-    sock.send(encoded_file_name)
-
-    sent_file_size = 0
-
-    if file_size == 0:
-        return
-
-    with open(file_name, 'rb') as sr:
-        print(file_name)
-        while sent_file_size <= file_size:
-            sock.send(sr.read(BUFFER_SIZE))
-            sent_file_size += BUFFER_SIZE
-
-            percentage = int(100 * sent_file_size / file_size)
-            if percentage > 100:
-                percentage = 100
-
-            print(str(percentage) + '%')
+    send_file_name(sock, file_name)
+    send_file(sock, file_name)
 
 
 def main():
