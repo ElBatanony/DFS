@@ -4,7 +4,7 @@ from threading import Thread
 
 from constants import BUFFER_SIZE
 from status_codes import *
-from web_format_converter import int64_to_web, web_to_int
+from web_format_converter import int64_to_web, web_to_int, int32_to_web
 
 clients = []
 
@@ -71,12 +71,12 @@ class ClientListener(Thread):
             print('Error during file name reading.')
 
         if not os.path.isfile(file_name):
-            self.sock.send(CODE_FILE_NOT_EXIST)
+            self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
             print('Error: file does not exist')
             return
         else:
-            self.sock.send(CODE_OK)
+            self.sock.send(int32_to_web(CODE_OK))
 
         file_size = os.path.getsize(file_name)
         self.sock.send(int64_to_web(file_size))

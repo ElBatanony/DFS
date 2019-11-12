@@ -3,12 +3,41 @@ import socket
 import sys
 
 from constants import BUFFER_SIZE
-from status_codes import CODE_WRITE_FILE, CODE_READ_FILE
-from web_format_converter import int32_to_web, int64_to_web
+from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
+from web_format_converter import int32_to_web, int64_to_web, web_to_int
 
 
 def read_file(sock, file_name):
-    pass
+    encoded_file_name = file_name.encode('UTF-8')
+    encoded_file_name_size = len(encoded_file_name)
+
+    sock.send(int32_to_web(encoded_file_name_size))
+    sock.send(encoded_file_name)
+
+    code = web_to_int(sock.recv(32))
+
+    if code != CODE_OK:
+        sock.close()
+        print('Error with code %d' % code)
+        return
+
+    file_size = web_to_int(sock.recv(64))
+
+    with open(file_name, 'wb') as sw:
+
+        received_size = 0
+
+        while received_size < file_size:
+            buffer = min(file_size - received_size, BUFFER_SIZE)
+            file = sock.recv(buffer)
+            received_size += buffer
+            if file is None:
+                sock.close()
+                print('Error during file transfer.')
+                return
+            sw.write(file)
+
+        print(file_name + ' received.')
 
 
 def write_file(sock, file_name):
