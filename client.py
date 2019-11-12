@@ -3,7 +3,8 @@ import socket
 import sys
 
 from constants import BUFFER_SIZE
-from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK, CODE_CREATE_EMPTY_FILE, CODE_DELETE_FILE
+from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK, CODE_CREATE_EMPTY_FILE, CODE_DELETE_FILE, \
+    CODE_FILE_INFO
 from web_format_converter import int32_to_web, int64_to_web, web_to_int
 
 
@@ -22,6 +23,8 @@ def read_file(sock, file_name):
         return
 
     file_size = web_to_int(sock.recv(64))
+
+    print("File send query sended.")
 
     with open(file_name, 'wb') as sw:
 
@@ -58,6 +61,8 @@ def write_file(sock, file_name):
     if file_size == 0:
         return
 
+    print("Start sending file ...")
+
     with open(file_name, 'rb') as sr:
         print(file_name)
         while sent_file_size <= file_size:
@@ -70,6 +75,8 @@ def write_file(sock, file_name):
 
             print(str(percentage) + '%')
 
+    print("Done")
+
 
 def create_empty_file(sock, file_name):
     encoded_file_name = file_name.encode('UTF-8')
@@ -77,7 +84,7 @@ def create_empty_file(sock, file_name):
     sock.send(int32_to_web(encoded_file_name_size))
     sock.send(encoded_file_name)
 
-    print("Create quiery sended")
+    print("Create empty file query sended.")
 
 
 def delete_file(sock, file_name):
@@ -86,7 +93,16 @@ def delete_file(sock, file_name):
     sock.send(int32_to_web(encoded_file_name_size))
     sock.send(encoded_file_name)
 
-    print("Delete file quiery sended")
+    print("Delete file query sended.")
+
+
+def get_file_info(sock, file_name):
+    encoded_file_name = file_name.encode('UTF-8')
+    encoded_file_name_size = len(encoded_file_name)
+    sock.send(int32_to_web(encoded_file_name_size))
+    sock.send(encoded_file_name)
+
+    print("Info query sended.")
 
 
 def main():
@@ -110,6 +126,9 @@ def main():
     elif command == 'c':
         sock.send(int32_to_web(CODE_CREATE_EMPTY_FILE))
         create_empty_file(sock, sys.argv[2])
+    elif command == 'i':
+        sock.send(int32_to_web(CODE_FILE_INFO))
+        get_file_info(sock, sys.argv[2])
 
     sock.close()
 

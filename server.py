@@ -1,6 +1,8 @@
 import os
 import socket
 from threading import Thread
+import time
+import stat
 
 from constants import BUFFER_SIZE
 from status_codes import *
@@ -14,6 +16,41 @@ class ClientListener(Thread):
         super().__init__(daemon=True)
         self.sock = sock
         self.name = name
+
+    def get_file_info(self):
+
+        file_name_size = web_to_int(self.sock.recv(32))
+
+        if file_name_size is None:
+            self._close()
+            print('Error during file name size reading.')
+            return
+
+        file_name = self.sock.recv(file_name_size).decode('UTF-8')
+
+        if file_name is None or file_name == '':
+            self._close()
+            print('Error during file name reading')
+            return
+
+        if os.path.exists(file_name):
+
+            info = os.stat(file_name)
+
+            mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime = info
+            print("\nFile '{0}' info:\n".format(file_name))
+            print("Size: {0} bytes.".format(size))
+            print("Last accessed: {0}.".format(time.asctime(time.localtime(atime))))
+            print("Last modified: {0}.".format(time.asctime(time.localtime(mtime))))
+            print("File info last changed: {0}.".format(time.asctime(time.localtime(ctime))))
+            print("Protection bits: {0}.".format(oct(stat.S_IMODE(mode))[2:]))
+            print("Hardlinks number: {0}.".format(nlink))
+
+        else:
+            print('Error: No such file in directory.')
+            return
+
+        pass
 
     def create_empty_file(self):
 
@@ -169,6 +206,8 @@ class ClientListener(Thread):
             self.create_empty_file()
         elif command_code == CODE_DELETE_FILE:
             self.remove_file()
+        elif command_code == CODE_FILE_INFO:
+            self.get_file_info()
         else:
             print(command_code)
             print('Error reading command code.')
