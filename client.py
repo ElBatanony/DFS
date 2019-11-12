@@ -3,6 +3,44 @@ import socket
 import sys
 
 from constants import BUFFER_SIZE
+from status_codes import CODE_WRITE_FILE, CODE_READ_FILE
+from web_format_converter import int32_to_web, int64_to_web
+
+
+def read_file(sock, file_name):
+    pass
+
+
+def write_file(sock, file_name):
+    encoded_file_name = file_name.encode('UTF-8')
+
+    if not os.path.exists(file_name):
+        print('File does not exist.')
+        return
+
+    file_size = os.path.getsize(file_name)
+    encoded_file_name_size = len(encoded_file_name)
+
+    sock.send(int32_to_web(encoded_file_name_size))
+    sock.send(int64_to_web(file_size))
+    sock.send(encoded_file_name)
+
+    sent_file_size = 0
+
+    if file_size == 0:
+        return
+
+    with open(file_name, 'rb') as sr:
+        print(file_name)
+        while sent_file_size <= file_size:
+            sock.send(sr.read(BUFFER_SIZE))
+            sent_file_size += BUFFER_SIZE
+
+            percentage = int(100 * sent_file_size / file_size)
+            if percentage > 100:
+                percentage = 100
+
+            print(str(percentage) + '%')
 
 
 def main():
@@ -13,34 +51,15 @@ def main():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((host, port))
 
-    for i in range(1, len(sys.argv) - 2):
-        file_name = sys.argv[i]
-        encoded_file_name = file_name.encode('UTF-8')
+    command = sys.argv[1]
+    if command == 'w':
+        sock.send(int32_to_web(CODE_WRITE_FILE))
+        write_file(sock, sys.argv[2])
+    elif command == 'r':
+        sock.send(int32_to_web(CODE_READ_FILE))
+        read_file(sock, sys.argv[2])
 
-        if not os.path.exists(file_name):
-            print('File does not exist.')
-            return
-
-        file_size = os.path.getsize(file_name)
-        encoded_file_name_size = len(encoded_file_name)
-
-        sock.send(int.to_bytes(encoded_file_name_size, byteorder='big', length=32, signed=False))
-        sock.send(int.to_bytes(file_size, byteorder='big', length=64, signed=False))
-        sock.send(encoded_file_name)
-
-        sent_file_size = 0
-
-        with open(file_name, 'rb') as sr:
-            print(file_name)
-            while sent_file_size <= file_size:
-                sock.send(sr.read(BUFFER_SIZE))
-                sent_file_size += BUFFER_SIZE
-
-                percentage = int(100 * sent_file_size / file_size)
-                if percentage > 100:
-                    percentage = 100
-
-                print(str(percentage) + '%')
+    sock.close()
 
 
 if __name__ == "__main__":
