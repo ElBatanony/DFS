@@ -2,6 +2,7 @@ import os
 import socket
 from threading import Thread
 
+from constants import BUFFER_SIZE
 from status_codes import *
 
 clients = []
@@ -31,7 +32,31 @@ class ClientListener(Thread):
             print('Error during file name reading.')
 
         if not os.path.isfile(file_name):
+            self.sock.send(CODE_FILE_NOT_EXIST)
+            self._close()
+            print('Error: file does not exist')
+            return
+        else:
             self.sock.send(CODE_OK)
+
+        file_size = os.path.getsize(file_name)
+        self.sock.send(int.to_bytes(file_size, byteorder='big', length=64, signed=False))
+
+        with open(file_name, 'rb') as sr:
+
+            received_size = 0
+
+            while received_size < file_size:
+                buffer = min(file_size - received_size, BUFFER_SIZE)
+                file = self.sock.send(sr.read(buffer))
+                received_size += buffer
+                if file is None:
+                    self._close()
+                    print('Error during file transfer.')
+                    return
+                sw.write(file)
+
+            print(file_name + ' received.')
 
     def run(self):
         file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
@@ -55,7 +80,7 @@ class ClientListener(Thread):
             received_size = 0
 
             while received_size < file_size:
-                buffer = min(file_size - received_size, 1024)
+                buffer = min(file_size - received_size, BUFFER_SIZE)
                 file = self.sock.recv(buffer)
                 received_size += buffer
                 if file is None:
@@ -68,9 +93,6 @@ class ClientListener(Thread):
 
 
 def main():
-    for file in os.listdir():
-        files.add(file)
-
     next_name = 1
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -2,6 +2,8 @@ import os
 import socket
 import sys
 
+from constants import BUFFER_SIZE
+
 
 def main():
     host = sys.argv[len(sys.argv) - 2]
@@ -31,8 +33,8 @@ def main():
         with open(file_name, 'rb') as sr:
             print(file_name)
             while sent_file_size <= file_size:
-                sock.send(sr.read(1024))
-                sent_file_size += 1024
+                sock.send(sr.read(BUFFER_SIZE))
+                sent_file_size += BUFFER_SIZE
 
                 percentage = int(100 * sent_file_size / file_size)
                 if percentage > 100:
