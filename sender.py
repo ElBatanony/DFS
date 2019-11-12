@@ -4,10 +4,10 @@ from constants import BUFFER_SIZE
 from web_format_converter import int32_to_web, int64_to_web
 
 
-def send_file_name(sock, file_name):
-    encoded_file_name = file_name.encode('UTF-8')
-    sock.send(int32_to_web(len(encoded_file_name)))
-    sock.send(encoded_file_name)
+def send_str(sock, value):
+    encoded_value = value.encode('UTF-8')
+    sock.send(int32_to_web(len(encoded_value)))
+    sock.send(encoded_value)
 
 
 def send_file(sock, file_name):
@@ -31,4 +31,4 @@ def send_file(sock, file_name):
 
             print(str(percentage) + '%')
 
-    print('%s sent.' % file_name)
+    print('%s sent' % file_name)

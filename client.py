@@ -2,36 +2,83 @@ import os
 import socket
 import sys
 
-from receiver import receive_file
-from sender import send_file_name, send_file
-from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
-from web_format_converter import int32_to_web, int64_to_web, web_to_int
+from receiver import receive_file, receive_str
+from sender import send_str, send_file
+from status_codes import COMMAND_WRITE_FILE, COMMAND_READ_FILE, CODE_OK, COMMAND_CREATE_EMPTY_FILE, COMMAND_DELETE_FILE, \
+    COMMAND_FILE_INFO, COMMAND_COPY_FILE
+from web_format_converter import int32_to_web, web_to_int
 
 
-def read_file(sock, file_name):
-    send_file_name(sock, file_name)
+def get_file_info(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+        return
+
+    try:
+        file_info = receive_str(sock)
+        print(file_info)
+    except Exception as e:
+        print(str(e))
+        return
+
+
+def create_empty_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+    else:
+        print('file created')
+
+
+def delete_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+    else:
+        print('file removed')
+
+
+def copy_file(sock, old_file_name, new_file_name):
+    send_str(sock, old_file_name)
+    send_str(sock, new_file_name)
 
     code = web_to_int(sock.recv(32))
 
     if code != CODE_OK:
-        sock.close()
-        print('Error with code %d' % code)
+        print('error with code %d' % code)
+    else:
+        print('file copied')
+
+
+def read_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+
+    if code != CODE_OK:
+        print('error with code %d' % code)
         return
 
     try:
         receive_file(sock, file_name)
     except Exception as e:
         print(str(e))
-        sock.close()
         return
 
 
 def write_file(sock, file_name):
     if not os.path.exists(file_name):
-        print('File does not exist.')
+        print('file does not exist')
         return
 
-    send_file_name(sock, file_name)
+    send_str(sock, file_name)
     send_file(sock, file_name)
 
 
@@ -45,11 +92,23 @@ def main():
 
     command = sys.argv[1]
     if command == 'w':
-        sock.send(int32_to_web(CODE_WRITE_FILE))
+        sock.send(int32_to_web(COMMAND_WRITE_FILE))
         write_file(sock, sys.argv[2])
     elif command == 'r':
-        sock.send(int32_to_web(CODE_READ_FILE))
+        sock.send(int32_to_web(COMMAND_READ_FILE))
         read_file(sock, sys.argv[2])
+    elif command == 'c':
+        sock.send(int32_to_web(COMMAND_COPY_FILE))
+        copy_file(sock, sys.argv[2], sys.argv[3])
+    elif command == 'd':
+        sock.send(int32_to_web(COMMAND_DELETE_FILE))
+        delete_file(sock, sys.argv[2])
+    elif command == 'n':
+        sock.send(int32_to_web(COMMAND_CREATE_EMPTY_FILE))
+        create_empty_file(sock, sys.argv[2])
+    elif command == 'i':
+        sock.send(int32_to_web(COMMAND_FILE_INFO))
+        get_file_info(sock, sys.argv[2])
 
     sock.close()
 
