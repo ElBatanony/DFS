@@ -2,8 +2,9 @@ import os
 import socket
 from threading import Thread
 
+from status_codes import *
+
 clients = []
-files = set()
 
 
 class ClientListener(Thread):
@@ -17,15 +18,20 @@ class ClientListener(Thread):
         self.sock.close()
         print(self.name + ' disconnected')
 
-    @staticmethod
-    def _get_file_name(name):
-        name_parts = name.split('.')
-        index = 1
-        while name in files:
-            name = name_parts[0] + '_copy' + str(index) + '.' + name_parts[1]
-            index += 1
-        files.add(name)
-        return name
+    def read_file(self):
+        file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
+        if file_name_size is None:
+            self._close()
+            print('Error during file name size reading.')
+            return
+
+        file_name = self.sock.recv(file_name_size).decode('UTF-8')
+        if file_name is None:
+            self._close()
+            print('Error during file name reading.')
+
+        if not os.path.isfile(file_name):
+            self.sock.send(CODE_OK)
 
     def run(self):
         file_name_size = int.from_bytes(bytes=self.sock.recv(32), byteorder='big', signed=False)
@@ -43,7 +49,6 @@ class ClientListener(Thread):
             return
 
         file_name = self.sock.recv(file_name_size).decode('UTF-8')
-        file_name = ClientListener._get_file_name(file_name)
 
         with open(file_name, 'wb') as sw:
 
