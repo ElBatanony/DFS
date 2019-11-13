@@ -1,10 +1,14 @@
 import os
+import shutil
 import socket
 from threading import Thread
+import time
+import stat
 
-from constants import BUFFER_SIZE
+from receiver import receive_str, receive_file
+from sender import send_file, send_str
 from status_codes import *
-from web_format_converter import int64_to_web, web_to_int, int32_to_web
+from web_format_converter import web_to_int, int32_to_web
 
 clients = []
 
@@ -20,95 +24,141 @@ class ClientListener(Thread):
         self.sock.close()
         print(self.name + ' disconnected')
 
+    def get_file_info(self):
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+
+        if os.path.exists(file_name):
+            self.sock.send(int32_to_web(CODE_OK))
+
+            info = os.stat(file_name)
+
+            result = ''
+
+            mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime = info
+            result += "\nFile '{0}' info:\n".format(file_name)
+            result += "Size: {0} bytes.\n".format(size)
+            result += "Last accessed: {0}.\n".format(time.asctime(time.localtime(atime)))
+            result += "Last modified: {0}.\n".format(time.asctime(time.localtime(mtime)))
+            result += "File info last changed: {0}.\n".format(time.asctime(time.localtime(ctime)))
+            result += "Protection bits: {0}.\n".format(oct(stat.S_IMODE(mode))[2:])
+            result += "Hardlinks number: {0}.\n".format(nlink)
+
+            send_str(self.sock, result)
+        else:
+            self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
+            print('error: no such file')
+            return
+
+    def create_empty_file(self):
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+
+        if os.path.exists(file_name):
+            self.sock.send(int32_to_web(CODE_FILE_ALREADY_EXIST))
+            print('error: file {0} already exists'.format(file_name))
+            return
+        else:
+            open(file_name, 'a').close()
+            self.sock.send(int32_to_web(CODE_OK))
+            print("created {0} empty file".format(file_name))
+
+    def delete_file(self):
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+
+        if os.path.exists(file_name):
+            os.remove(file_name)
+            self.sock.send(int32_to_web(CODE_OK))
+            print("file {0} removed.".format(file_name))
+        else:
+            self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
+            print('error: no such file')
+            return
+
+    def copy_file(self):
+        try:
+            old_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+
+        try:
+            new_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+
+        if os.path.exists(old_file_name):
+            shutil.copyfile(old_file_name, new_file_name)
+            self.sock.send(int32_to_web(CODE_OK))
+        else:
+            self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
+
     def write_file(self):
-        file_name_size = web_to_int(self.sock.recv(32))
-
-        if file_name_size is None:
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
             self._close()
-            print('Error during file name size reading.')
             return
 
-        file_size = web_to_int(self.sock.recv(64))
-
-        if file_size is None:
+        try:
+            receive_file(self.sock, file_name)
+        except Exception as e:
+            print(str(e))
             self._close()
-            print('Error during file size reading.')
             return
-
-        file_name = self.sock.recv(file_name_size).decode('UTF-8')
-
-        if file_name is None or file_name == '':
-            self._close()
-            print('Error during file name reading')
-            return
-
-        with open(file_name, 'wb') as sw:
-
-            received_size = 0
-
-            while received_size < file_size:
-                buffer = min(file_size - received_size, BUFFER_SIZE)
-                file = self.sock.recv(buffer)
-                received_size += buffer
-                if file is None:
-                    self._close()
-                    print('Error during file transfer.')
-                    return
-                sw.write(file)
-
-            print(file_name + ' received.')
 
     def read_file(self):
-        file_name_size = web_to_int(self.sock.recv(32))
-        if file_name_size is None:
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
             self._close()
-            print('Error during file name size reading.')
             return
-
-        file_name = self.sock.recv(file_name_size).decode('UTF-8')
-        if file_name is None:
-            self._close()
-            print('Error during file name reading.')
 
         if not os.path.isfile(file_name):
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
-            print('Error: file does not exist')
+            print('error: file does not exist')
             return
         else:
             self.sock.send(int32_to_web(CODE_OK))
 
-        file_size = os.path.getsize(file_name)
-        self.sock.send(int64_to_web(file_size))
-
-        if file_size == 0:
-            return
-
-        sent_file_size = 0
-
-        with open(file_name, 'rb') as sr:
-            print(file_name)
-            while sent_file_size <= file_size:
-                self.sock.send(sr.read(BUFFER_SIZE))
-                sent_file_size += BUFFER_SIZE
-
-                percentage = int(100 * sent_file_size / file_size)
-                if percentage > 100:
-                    percentage = 100
-
-                print(str(percentage) + '%')
-
-            print(file_name + ' received.')
+        send_file(self.sock, file_name)
 
     def run(self):
         command_code = web_to_int(self.sock.recv(32))
 
-        if command_code == CODE_WRITE_FILE:
+        if command_code == COMMAND_WRITE_FILE:
             self.write_file()
-        elif command_code == CODE_READ_FILE:
+        elif command_code == COMMAND_READ_FILE:
             self.read_file()
+        elif command_code == COMMAND_COPY_FILE:
+            self.copy_file()
+        elif command_code == COMMAND_DELETE_FILE:
+            self.delete_file()
+        elif command_code == COMMAND_CREATE_EMPTY_FILE:
+            self.create_empty_file()
+        elif command_code == COMMAND_FILE_INFO:
+            self.get_file_info()
         else:
-            print('Error reading command code.')
+            print('error reading command code %d' % command_code)
         self.sock.close()
 
 
@@ -121,12 +171,12 @@ def main():
     sock.listen()
 
     while True:
-        con, addr = sock.accept()
-        clients.append(con)
+        connection, address = sock.accept()
+        clients.append(connection)
         name = 'u' + str(next_name)
         next_name += 1
-        print(str(addr) + ' connected as ' + name)
-        ClientListener(name, con).start()
+        print(str(address) + ' connected as ' + name)
+        ClientListener(name, connection).start()
 
 
 if __name__ == "__main__":

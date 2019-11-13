@@ -2,74 +2,84 @@ import os
 import socket
 import sys
 
-from constants import BUFFER_SIZE
-from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
-from web_format_converter import int32_to_web, int64_to_web, web_to_int
+from receiver import receive_file, receive_str
+from sender import send_str, send_file
+from status_codes import COMMAND_WRITE_FILE, COMMAND_READ_FILE, CODE_OK, COMMAND_CREATE_EMPTY_FILE, COMMAND_DELETE_FILE, \
+    COMMAND_FILE_INFO, COMMAND_COPY_FILE
+from web_format_converter import int32_to_web, web_to_int
 
 
-def read_file(sock, file_name):
-    encoded_file_name = file_name.encode('UTF-8')
-    encoded_file_name_size = len(encoded_file_name)
+def get_file_info(sock, file_name):
+    send_str(sock, file_name)
 
-    sock.send(int32_to_web(encoded_file_name_size))
-    sock.send(encoded_file_name)
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+        return
+
+    try:
+        file_info = receive_str(sock)
+        print(file_info)
+    except Exception as e:
+        print(str(e))
+        return
+
+
+def create_empty_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+    else:
+        print('file created')
+
+
+def delete_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+    if code != CODE_OK:
+        print('error with code %d' % code)
+    else:
+        print('file removed')
+
+
+def copy_file(sock, old_file_name, new_file_name):
+    send_str(sock, old_file_name)
+    send_str(sock, new_file_name)
 
     code = web_to_int(sock.recv(32))
 
     if code != CODE_OK:
-        sock.close()
-        print('Error with code %d' % code)
+        print('error with code %d' % code)
+    else:
+        print('file copied')
+
+
+def read_file(sock, file_name):
+    send_str(sock, file_name)
+
+    code = web_to_int(sock.recv(32))
+
+    if code != CODE_OK:
+        print('error with code %d' % code)
         return
 
-    file_size = web_to_int(sock.recv(64))
-
-    with open(file_name, 'wb') as sw:
-
-        received_size = 0
-
-        while received_size < file_size:
-            buffer = min(file_size - received_size, BUFFER_SIZE)
-            file = sock.recv(buffer)
-            received_size += buffer
-            if file is None:
-                sock.close()
-                print('Error during file transfer.')
-                return
-            sw.write(file)
-
-        print(file_name + ' received.')
+    try:
+        receive_file(sock, file_name)
+    except Exception as e:
+        print(str(e))
+        return
 
 
 def write_file(sock, file_name):
-    encoded_file_name = file_name.encode('UTF-8')
-
     if not os.path.exists(file_name):
-        print('File does not exist.')
+        print('file does not exist')
         return
 
-    file_size = os.path.getsize(file_name)
-    encoded_file_name_size = len(encoded_file_name)
-
-    sock.send(int32_to_web(encoded_file_name_size))
-    sock.send(int64_to_web(file_size))
-    sock.send(encoded_file_name)
-
-    sent_file_size = 0
-
-    if file_size == 0:
-        return
-
-    with open(file_name, 'rb') as sr:
-        print(file_name)
-        while sent_file_size <= file_size:
-            sock.send(sr.read(BUFFER_SIZE))
-            sent_file_size += BUFFER_SIZE
-
-            percentage = int(100 * sent_file_size / file_size)
-            if percentage > 100:
-                percentage = 100
-
-            print(str(percentage) + '%')
+    send_str(sock, file_name)
+    send_file(sock, file_name)
 
 
 def main():
@@ -82,11 +92,23 @@ def main():
 
     command = sys.argv[1]
     if command == 'w':
-        sock.send(int32_to_web(CODE_WRITE_FILE))
+        sock.send(int32_to_web(COMMAND_WRITE_FILE))
         write_file(sock, sys.argv[2])
     elif command == 'r':
-        sock.send(int32_to_web(CODE_READ_FILE))
+        sock.send(int32_to_web(COMMAND_READ_FILE))
         read_file(sock, sys.argv[2])
+    elif command == 'c':
+        sock.send(int32_to_web(COMMAND_COPY_FILE))
+        copy_file(sock, sys.argv[2], sys.argv[3])
+    elif command == 'd':
+        sock.send(int32_to_web(COMMAND_DELETE_FILE))
+        delete_file(sock, sys.argv[2])
+    elif command == 'n':
+        sock.send(int32_to_web(COMMAND_CREATE_EMPTY_FILE))
+        create_empty_file(sock, sys.argv[2])
+    elif command == 'i':
+        sock.send(int32_to_web(COMMAND_FILE_INFO))
+        get_file_info(sock, sys.argv[2])
 
     sock.close()
 
