@@ -37,6 +37,20 @@ def init_server(sock):
     ret = receive_str(sock)
     print('init response: ' + ret)
 
+
+def file_info(sock, file_name):
+    sock.send(int32_to_web(CMD_FILE_INFO))
+    send_str(sock, file_name)
+    ret = receive_str(sock)
+    print('info response: ' + ret)
+
+def move_file(sock, file_name, new_path):
+    sock.send(int32_to_web(CMD_FILE_MOVE))
+    send_str(sock, file_name)
+    send_str(sock, new_path)
+    ret = receive_str(sock)
+    print('mv response: ' + ret)
+
 def main():
     #host = sys.argv[len(sys.argv) - 2]
     #port = int(sys.argv[len(sys.argv) - 1])
@@ -46,12 +60,6 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((host, port))
-
-    # read_directory(sock)
-    # make_directory(sock, 'hello')
-    # read_directory(sock)
-    # make_directory(sock, 'hi')
-    # read_directory(sock)
 
     cmd = ''
     while True:
@@ -70,6 +78,10 @@ def main():
 
         elif cmd == 'init' and len(args) == 0:
             init_server(sock)
+        elif cmd == 'info' and len(args) == 1:
+            file_info(sock, args[0])
+        elif cmd == 'mv' and len(args) == 2:
+            move_file(sock, args[0], args[1])
         
         elif cmd == 'exit':
             print('Exiting')

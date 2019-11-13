@@ -5,6 +5,7 @@ from web_format_converter import int32_to_web, int64_to_web
 
 
 def send_str(sock, value):
+    value = str(value)
     encoded_value = value.encode('UTF-8')
     sock.send(int32_to_web(len(encoded_value)))
     sock.send(encoded_value)

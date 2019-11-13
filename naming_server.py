@@ -66,6 +66,22 @@ def delete_directory_by_path(directory_path, force):
     else:
         return DIR_DELETE_NOT_EXIST
 
+def file_info_by_path(file_path):
+    file_dir = get_prev(file_path)
+    file_name = get_last(file_path)
+    if file_dir in directories:
+        if file_name in directories[file_dir].files:
+            f = directories[file_dir].files[file_name]
+            ret = '{},{},{},{},{},{}'.format( f.name, f.id, str(f.size), f.storage[0], f.storage[1], f.storage[2] )
+            return ret
+        else:
+            return ERR_FILE_NOT_EXIST
+    else:
+        return ERR_FILE_DIR_NOT_EXIST
+
+def move_file_by_path(file_path, new_path):
+    return 'NOT IMPLEMENTED YET. WAITING FOR FILES.'
+
 class ClientListener(Thread):
 
     def __init__(self, name: str, sock: socket.socket):
@@ -109,6 +125,12 @@ class ClientListener(Thread):
 
     def delete_directory(self, directory_name, force=False):
         return delete_directory_by_path( self.path + '/' + directory_name, force )
+
+    def file_info(self, file_name):
+        return file_info_by_path( self.path + '/' + file_name )
+    
+    def move_file(self, file_name, new_path):
+        return move_file_by_path(self.path + '/' + file_name, new_path)
     
     def run(self):
         cmd = ''
@@ -131,7 +153,7 @@ class ClientListener(Thread):
                 ret = self.make_directory(directory_name)
                 send_str(self.sock, ret)
             elif cmd == CMD_DELETE_DIR:
-                directory_name = receive_file(self.sock)
+                directory_name = receive_str(self.sock)
                 ret = self.delete_directory(directory_name)
                 send_str(self.sock, ret)
             
@@ -140,6 +162,15 @@ class ClientListener(Thread):
                 delete_directory_by_path(self.name, True)
                 directories[self.name] = Directory(self.name)
                 send_str(self.sock, 'Storage initialized. You have '+ str(INITIAL_SIZE) + ' MBs available.')
+            elif cmd == CMD_FILE_INFO:
+                file_name = receive_str(self.sock)
+                ret = self.file_info(file_name)
+                send_str(self.sock, ret)
+            elif cmd == CMD_FILE_MOVE:
+                file_name = receive_str(self.sock)
+                new_path = receive_str(self.sock)
+                ret = self.move_file(file_name, new_path)
+                send_str(self.sock, ret)
 
             elif cmd == CMD_CLOSE_SOCK:
                 break
@@ -166,7 +197,7 @@ if __name__ == "__main__":
 
     # only for testing, this kills server after client disconnects
     while clientListener.isAlive():
-        time.sleep(1)
+        time.sleep(0.5)
     
     print('Naming server shutting down. Probably should save.')
 
