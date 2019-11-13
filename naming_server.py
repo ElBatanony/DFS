@@ -112,12 +112,20 @@ class ClientListener(Thread):
                 self.write_file()
             elif cmd == CODE_READ_FILE:
                 self.read_file()
+            elif cmd == CMD_OPEN_DIR:
+                directory_name = recv_str(self.sock)
+                ret = self.open_directory(directory_name)
+                send_str(self.sock, ret)
             elif cmd == CMD_READ_DIR:
                 ret = self.read_directory()
                 send_str(self.sock, ret)
             elif cmd == CMD_MAKE_DIR:
                 directory_name = recv_str(self.sock)
                 ret = self.make_directory(directory_name)
+                send_str(self.sock, ret)
+            elif cmd == CMD_DELETE_DIR:
+                directory_name = recv_str(self.sock)
+                ret = self.delete_directory(directory_name)
                 send_str(self.sock, ret)
             elif cmd == CMD_CLOSE_SOCK:
                 break

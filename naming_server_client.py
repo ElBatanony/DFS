@@ -7,18 +7,29 @@ from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
 from web_format_converter import int32_to_web, int64_to_web, web_to_int
 from status_codes import *
 from helpers import *
-import time
+
+def open_directory(sock, directory_name):
+    sock.send(int32_to_web(CMD_OPEN_DIR))
+    send_str(sock, directory_name)
+    ret = recv_str(sock)
+    print('cd response: ' + ret)
 
 def read_directory(sock):
     sock.send(int32_to_web(CMD_READ_DIR))
     dir = recv_str(sock)
-    print('read dir response: ' + dir )
+    print('ls response: ' + dir )
 
 def make_directory(sock, directory_name):
     sock.send(int32_to_web(CMD_MAKE_DIR))
     send_str(sock, directory_name)
     ret = recv_str(sock)
     print('mkdir response: ' + ret)
+
+def delete_directory(sock, directory_name):
+    sock.send(int32_to_web(CMD_DELETE_DIR))
+    send_str(sock, directory_name)
+    ret = recv_str(sock)
+    print('rmdir response: ' + ret)
 
 def main():
     #host = sys.argv[len(sys.argv) - 2]
@@ -43,13 +54,13 @@ def main():
         args = inp.split(' ')[1:]
 
         if cmd == 'cd' and len(args) == 1:
-            print('Opening directory', args[0])
+            open_directory(sock, args[0])
         elif cmd == 'ls' and len(args) == 0:
             read_directory(sock)
         elif cmd == 'mkdir' and len(args) == 1:
             make_directory(sock, args[0])
         elif cmd == 'rmdir' and len(args) == 1:
-            print('Deleting directory', args[0])
+            delete_directory(sock, args[0])
         elif cmd == 'exit':
             print('Exiting')
             break
