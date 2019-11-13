@@ -15,3 +15,8 @@ DIR_DELETE_OK = 'Directory successfully deleted'
 
 CODE_WRITE_FILE = 2
 CODE_READ_FILE = 3
+
+CMD_READ_DIR = 101
+CMD_MAKE_DIR = 102
+
+CMD_CLOSE_SOCK = 999

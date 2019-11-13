@@ -2,6 +2,8 @@ import os
 import socket
 from threading import Thread
 from status_codes import *
+from web_format_converter import int64_to_web, web_to_int, int32_to_web
+from helpers import *
 
 clients = []
 
@@ -88,7 +90,12 @@ class ClientListener(Thread):
         return DIR_OPEN_NOT_EXIST
     
     def read_directory(self):
-        return directories[self.path]
+        ret = ''
+        for dir in directories[self.path].directories:
+            ret += dir + '/ '
+        for file in directories[self.path].files:
+            ret += file + ' '
+        return ret
     
     def make_directory(self, directory_name):
         return make_directory_by_path( self.path + '/' + directory_name )
@@ -97,40 +104,27 @@ class ClientListener(Thread):
         return delete_directory_by_path( self.path + '/' + directory_name, force )
     
     def run(self):
-        file_name_size = int.from_bytes(
-            bytes=self.sock.recv(32), byteorder='big', signed=False)
+        cmd = ''
+        while True:
+            cmd = web_to_int(self.sock.recv(32))
 
-        if file_name_size is None:
-            self._close()
-            print('Error during file name size reading.')
-            return
+            if cmd == CODE_WRITE_FILE:
+                self.write_file()
+            elif cmd == CODE_READ_FILE:
+                self.read_file()
+            elif cmd == CMD_READ_DIR:
+                ret = self.read_directory()
+                send_str(self.sock, ret)
+            elif cmd == CMD_MAKE_DIR:
+                directory_name = recv_str(self.sock)
+                ret = self.make_directory(directory_name)
+                send_str(self.sock, ret)
+            elif cmd == CMD_CLOSE_SOCK:
+                break
+            else:
+                print('Error reading command code.')
 
-        file_size = int.from_bytes(bytes=self.sock.recv(
-            64), byteorder='big', signed=False)
-
-        if file_size is None:
-            self._close()
-            print('Error during file size reading.')
-            return
-
-        file_name = self.sock.recv(file_name_size).decode('UTF-8')
-        file_name = ClientListener._get_file_name(file_name)
-
-        with open(file_name, 'wb') as sw:
-
-            received_size = 0
-
-            while received_size < file_size:
-                buffer = min(file_size - received_size, 1024)
-                file = self.sock.recv(buffer)
-                received_size += buffer
-                if file is None:
-                    self._close()
-                    print('Error during file transfer.')
-                    return
-                sw.write(file)
-
-            print(file_name + ' received.')
+        self.sock.close()
 
 def test_client() :
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -143,4 +137,23 @@ def test_client() :
     print(tc.delete_directory('hi'))
 
 if __name__ == "__main__":
-    test_client()
+    #test_client()
+
+    next_name = 1
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(('', 8800))
+    sock.listen()
+
+    #sock.settimeout(10) # for testing
+    
+    con, addr = sock.accept()
+    clients.append(con)
+    name = 'u' + str(next_name)
+    next_name += 1
+    print(str(addr) + ' connected as ' + name)
+    client = ClientListener(name, con).start()
+
+    input('Enter any key to exit: ' )
+
