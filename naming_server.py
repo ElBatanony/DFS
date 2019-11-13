@@ -5,6 +5,8 @@ from status_codes import *
 from web_format_converter import int64_to_web, web_to_int, int32_to_web
 from receiver import receive_str, receive_file
 from sender import send_file, send_str
+from constants import *
+import time
 
 clients = []
 
@@ -57,7 +59,7 @@ def delete_directory_by_path(directory_path, force):
             delete_directory_by_path(directory_path + '/' + dir, True)
         
         directory_name = directory_path.split('/')[-1]
-        directories[ get_prev(directory_path) ].directories.remove( directory_name )
+        if get_prev(directory_path) != '' : directories[get_prev(directory_path)].directories.remove(directory_name)
         del directories[ directory_path ]
 
         return DIR_DELETE_OK
@@ -132,6 +134,13 @@ class ClientListener(Thread):
                 directory_name = receive_file(self.sock)
                 ret = self.delete_directory(directory_name)
                 send_str(self.sock, ret)
+            
+            elif cmd == CMD_INIT:
+                self.path = self.name
+                delete_directory_by_path(self.name, True)
+                directories[self.name] = Directory(self.name)
+                send_str(self.sock, 'Storage initialized. You have '+ str(INITIAL_SIZE) + ' MBs available.')
+
             elif cmd == CMD_CLOSE_SOCK:
                 break
             else:
@@ -139,34 +148,25 @@ class ClientListener(Thread):
 
         self.sock.close()
 
-def test_client() :
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tc = ClientListener('testing_client', sock)
-    print(tc.make_directory('hi'))
-    print(tc.open_directory('hi'))
-    print(tc.open_directory('..')) 
-    print(tc.open_directory('..'))
-    print(tc.read_directory() )
-    print(tc.delete_directory('hi'))
-
 if __name__ == "__main__":
-    #test_client()
-
-    next_name = 1
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 8800))
     sock.listen()
 
-    #sock.settimeout(10) # for testing
+    print('Naming server listening for client')
     
     con, addr = sock.accept()
     clients.append(con)
-    name = 'u' + str(next_name)
-    next_name += 1
-    print(str(addr) + ' connected as ' + name)
-    client = ClientListener(name, con).start()
+    name = 'da_client'
+    print( name + ' connected from ' + str(addr[0]) )
+    clientListener = ClientListener(name, con)
+    clientListener.start()
 
-    input('Enter any key to exit: ' )
+    # only for testing, this kills server after client disconnects
+    while clientListener.isAlive():
+        time.sleep(1)
+    
+    print('Naming server shutting down. Probably should save.')
 

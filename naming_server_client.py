@@ -32,6 +32,11 @@ def delete_directory(sock, directory_name):
     ret = receive_str(sock)
     print('rmdir response: ' + ret)
 
+def init_server(sock):
+    sock.send(int32_to_web(CMD_INIT))
+    ret = receive_str(sock)
+    print('init response: ' + ret)
+
 def main():
     #host = sys.argv[len(sys.argv) - 2]
     #port = int(sys.argv[len(sys.argv) - 1])
@@ -62,6 +67,10 @@ def main():
             make_directory(sock, args[0])
         elif cmd == 'rmdir' and len(args) == 1:
             delete_directory(sock, args[0])
+
+        elif cmd == 'init' and len(args) == 0:
+            init_server(sock)
+        
         elif cmd == 'exit':
             print('Exiting')
             break
