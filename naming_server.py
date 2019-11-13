@@ -13,10 +13,14 @@ class Directory:
     def __init__(self, path):
         self.path = path
         self.directories = []
-        self.files = []
+        self.files = {}
 
-    def __str__(self):
-        return 'path:' + self.path + ', dirs:' + str(self.directories) + ', files:' + str(self.files)
+class File:
+    def __init__(self, name, size):
+        self.name = name
+        self.size = size
+        self.id = 'random'
+        self.storage = ['ip1', 'ip2', 'ip3']
 
 def get_prev(path):
     return '/'.join(path.split('/')[:-1])
@@ -93,7 +97,7 @@ class ClientListener(Thread):
         ret = ''
         for dir in directories[self.path].directories:
             ret += dir + '/ '
-        for file in directories[self.path].files:
+        for file in directories[self.path].files.keys():
             ret += file + ' '
         return ret
     
