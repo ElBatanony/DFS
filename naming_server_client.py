@@ -7,14 +7,57 @@ from sender import *
 
 
 def write_file(sock, file_name):
-    send_int32(sock, CMD_WRITE_FILE)
-
     if not os.path.exists(CLIENT_ROOT_PATH + file_name):
         print('error: file does not exist')
         return
 
+    send_int32(sock, CMD_WRITE_FILE)
     send_str(sock, file_name)
     send_int64(sock, os.path.getsize(file_name))
+
+    try:
+        code = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return
+
+    if code != CODE_OK:
+        print('error with code %d' % code)
+        return
+
+    try:
+        file_id = receive_str(sock)
+    except Exception as e:
+        print(str(e))
+        return
+
+    try:
+        storage_size = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return
+
+    storage = []
+
+    for i in range(storage_size):
+        try:
+            s = receive_str(sock)
+            storage.append(s)
+        except Exception as e:
+            print(str(e))
+            return
+
+    print(file_id)
+    print(str(storage))
+
+
+def read_file(sock, file_name):
+    if not os.path.exists(CLIENT_ROOT_PATH + file_name):
+        print('error: file does not exist')
+        return
+
+    send_int32(sock, CMD_READ_FILE)
+    send_str(sock, file_name)
 
     try:
         code = receive_int32(sock)
@@ -118,6 +161,8 @@ def main():
 
         if cmd == 'w' and len(args) == 1:
             write_file(sock, args[0])
+        elif cmd == 'r' and len(args) == 1:
+            read_file(sock, args[0])
         elif cmd == 'cd' and len(args) == 1:
             open_directory(sock, args[0])
         elif cmd == 'ls' and len(args) == 0:

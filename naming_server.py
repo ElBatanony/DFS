@@ -152,6 +152,34 @@ class ClientListener(Thread):
         for i in range(len(file.storage)):
             send_str(self.sock, file.storage[i])
 
+    def read_file(self):
+        try:
+            full_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+
+        path_to_file = get_directory_from_full_file_name(full_file_name)
+
+        if path_to_file not in directories:
+            send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
+            return
+
+        directory = directories[path_to_file]
+        file_name = get_last(full_file_name)
+
+        if file_name not in directory.files:
+            send_int32(self.sock, CODE_FILE_NOT_EXIST)
+            return
+
+        file = directory.files[file_name]
+
+        send_int32(self.sock, CODE_OK)
+        send_str(self.sock, file.id)
+        send_int32(self.sock, len(file.storage))
+        for i in range(len(file.storage)):
+            send_str(self.sock, file.storage[i])
+
     def delete_file(self, file_name):
         return delete_file_by_path(self.path + '/' + file_name)
 
