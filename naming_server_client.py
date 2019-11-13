@@ -6,29 +6,30 @@ from constants import BUFFER_SIZE
 from status_codes import CODE_WRITE_FILE, CODE_READ_FILE, CODE_OK
 from web_format_converter import int32_to_web, int64_to_web, web_to_int
 from status_codes import *
-from helpers import *
+from receiver import receive_str, receive_file
+from sender import send_file, send_str
 
 def open_directory(sock, directory_name):
     sock.send(int32_to_web(CMD_OPEN_DIR))
     send_str(sock, directory_name)
-    ret = recv_str(sock)
+    ret = receive_str(sock)
     print('cd response: ' + ret)
 
 def read_directory(sock):
     sock.send(int32_to_web(CMD_READ_DIR))
-    dir = recv_str(sock)
+    dir = receive_str(sock)
     print('ls response: ' + dir )
 
 def make_directory(sock, directory_name):
     sock.send(int32_to_web(CMD_MAKE_DIR))
     send_str(sock, directory_name)
-    ret = recv_str(sock)
+    ret = receive_str(sock)
     print('mkdir response: ' + ret)
 
 def delete_directory(sock, directory_name):
     sock.send(int32_to_web(CMD_DELETE_DIR))
     send_str(sock, directory_name)
-    ret = recv_str(sock)
+    ret = receive_str(sock)
     print('rmdir response: ' + ret)
 
 def main():

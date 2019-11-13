@@ -3,7 +3,8 @@ import socket
 from threading import Thread
 from status_codes import *
 from web_format_converter import int64_to_web, web_to_int, int32_to_web
-from helpers import *
+from receiver import receive_str, receive_file
+from sender import send_file, send_str
 
 clients = []
 
@@ -94,7 +95,7 @@ class ClientListener(Thread):
         return DIR_OPEN_NOT_EXIST
     
     def read_directory(self):
-        ret = ''
+        ret = ' '
         for dir in directories[self.path].directories:
             ret += dir + '/ '
         for file in directories[self.path].files.keys():
@@ -117,18 +118,18 @@ class ClientListener(Thread):
             elif cmd == CODE_READ_FILE:
                 self.read_file()
             elif cmd == CMD_OPEN_DIR:
-                directory_name = recv_str(self.sock)
+                directory_name = receive_str(self.sock)
                 ret = self.open_directory(directory_name)
                 send_str(self.sock, ret)
             elif cmd == CMD_READ_DIR:
                 ret = self.read_directory()
                 send_str(self.sock, ret)
             elif cmd == CMD_MAKE_DIR:
-                directory_name = recv_str(self.sock)
+                directory_name = receive_str(self.sock)
                 ret = self.make_directory(directory_name)
                 send_str(self.sock, ret)
             elif cmd == CMD_DELETE_DIR:
-                directory_name = recv_str(self.sock)
+                directory_name = receive_file(self.sock)
                 ret = self.delete_directory(directory_name)
                 send_str(self.sock, ret)
             elif cmd == CMD_CLOSE_SOCK:
