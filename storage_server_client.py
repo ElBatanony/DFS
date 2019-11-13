@@ -4,8 +4,8 @@ import sys
 
 from receiver import receive_file, receive_str
 from sender import send_str, send_file
-from status_codes import COMMAND_WRITE_FILE, COMMAND_READ_FILE, CODE_OK, COMMAND_CREATE_EMPTY_FILE, COMMAND_DELETE_FILE, \
-    COMMAND_FILE_INFO, COMMAND_COPY_FILE
+from status_codes import CMD_WRITE_FILE, CMD_READ_FILE, CODE_OK, CMD_CREATE_EMPTY_FILE, CMD_DELETE_FILE, \
+    CMD_FILE_INFO, CMD_COPY_FILE
 from web_format_converter import int32_to_web, web_to_int
 
 
@@ -92,22 +92,22 @@ def main():
 
     command = sys.argv[1]
     if command == 'w':
-        sock.send(int32_to_web(COMMAND_WRITE_FILE))
+        sock.send(int32_to_web(CMD_WRITE_FILE))
         write_file(sock, sys.argv[2])
     elif command == 'r':
-        sock.send(int32_to_web(COMMAND_READ_FILE))
+        sock.send(int32_to_web(CMD_READ_FILE))
         read_file(sock, sys.argv[2])
     elif command == 'c':
-        sock.send(int32_to_web(COMMAND_COPY_FILE))
+        sock.send(int32_to_web(CMD_COPY_FILE))
         copy_file(sock, sys.argv[2], sys.argv[3])
     elif command == 'd':
-        sock.send(int32_to_web(COMMAND_DELETE_FILE))
+        sock.send(int32_to_web(CMD_DELETE_FILE))
         delete_file(sock, sys.argv[2])
     elif command == 'n':
-        sock.send(int32_to_web(COMMAND_CREATE_EMPTY_FILE))
+        sock.send(int32_to_web(CMD_CREATE_EMPTY_FILE))
         create_empty_file(sock, sys.argv[2])
     elif command == 'i':
-        sock.send(int32_to_web(COMMAND_FILE_INFO))
+        sock.send(int32_to_web(CMD_FILE_INFO))
         get_file_info(sock, sys.argv[2])
 
     sock.close()

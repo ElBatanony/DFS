@@ -1,2 +1,4 @@
 BUFFER_SIZE = 1024
 INITIAL_SIZE = 4096
+CLIENT_ROOT_PATH = "C:\\Repositories\\DFS\\"
+SERVER_ROOT_PATH = "C:\\Repositories\\DFS\\"

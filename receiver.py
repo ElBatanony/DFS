@@ -14,6 +14,14 @@ def receive_str(sock):
     return value
 
 
+def receive_int32(sock):
+    return web_to_int(sock.recv(32))
+
+
+def receive_int64(sock):
+    return web_to_int(sock.recv(64))
+
+
 def receive_file(sock, file_name):
     file_size = web_to_int(sock.recv(64))
 

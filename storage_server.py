@@ -145,17 +145,17 @@ class ClientListener(Thread):
     def run(self):
         command_code = web_to_int(self.sock.recv(32))
 
-        if command_code == COMMAND_WRITE_FILE:
+        if command_code == CMD_WRITE_FILE:
             self.write_file()
-        elif command_code == COMMAND_READ_FILE:
+        elif command_code == CMD_READ_FILE:
             self.read_file()
-        elif command_code == COMMAND_COPY_FILE:
+        elif command_code == CMD_COPY_FILE:
             self.copy_file()
-        elif command_code == COMMAND_DELETE_FILE:
+        elif command_code == CMD_DELETE_FILE:
             self.delete_file()
-        elif command_code == COMMAND_CREATE_EMPTY_FILE:
+        elif command_code == CMD_CREATE_EMPTY_FILE:
             self.create_empty_file()
-        elif command_code == COMMAND_FILE_INFO:
+        elif command_code == CMD_FILE_INFO:
             self.get_file_info()
         else:
             print('error reading command code %d' % command_code)
