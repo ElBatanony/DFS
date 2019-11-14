@@ -5,6 +5,7 @@ from threading import Thread
 import time
 import stat
 
+from constants import SERVER_ROOT_PATH, STORAGE_SERVER_PORT
 from receiver import receive_str, receive_file
 from sender import send_file, send_str
 from status_codes import *
@@ -118,7 +119,7 @@ class ClientListener(Thread):
             return
 
         try:
-            receive_file(self.sock, file_name)
+            receive_file(self.sock, file_name, SERVER_ROOT_PATH)
         except Exception as e:
             print(str(e))
             self._close()
@@ -132,7 +133,7 @@ class ClientListener(Thread):
             self._close()
             return
 
-        if not os.path.isfile(file_name):
+        if not os.path.isfile(SERVER_ROOT_PATH + file_name):
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
             print('error: file does not exist')
@@ -140,7 +141,7 @@ class ClientListener(Thread):
         else:
             self.sock.send(int32_to_web(CODE_OK))
 
-        send_file(self.sock, file_name)
+        send_file(self.sock, file_name, SERVER_ROOT_PATH)
 
     def run(self):
         command_code = web_to_int(self.sock.recv(32))
@@ -167,7 +168,7 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', 8800))
+    sock.bind(('', STORAGE_SERVER_PORT))
     sock.listen()
 
     while True:

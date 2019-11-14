@@ -22,13 +22,13 @@ def receive_int64(sock):
     return web_to_int(sock.recv(64))
 
 
-def receive_file(sock, file_name):
+def receive_file(sock, file_name, root_dir):
     file_size = web_to_int(sock.recv(64))
 
     if file_size is None:
         raise Exception('error during file size reading')
 
-    with open(file_name, 'wb') as sw:
+    with open(root_dir + file_name, 'wb') as sw:
 
         received_size = 0
 

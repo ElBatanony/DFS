@@ -5,6 +5,24 @@ from status_codes import *
 from receiver import *
 from sender import *
 
+storage = []
+
+
+def confirm_file_upload(sock, file_id):
+    send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
+    send_str(sock, file_id)
+
+
+def get_storage(sock):
+    global storage
+    send_int32(sock, CMD_GET_STORAGE)
+    size = receive_int32(sock)
+    new_storage = []
+    for i in range(size):
+        new_storage.append(receive_str(sock))
+    storage = new_storage
+    print(str(storage))
+
 
 def write_file(sock, file_name):
     if not os.path.exists(CLIENT_ROOT_PATH + file_name):
@@ -13,7 +31,7 @@ def write_file(sock, file_name):
 
     send_int32(sock, CMD_WRITE_FILE)
     send_str(sock, file_name)
-    send_int64(sock, os.path.getsize(file_name))
+    send_int64(sock, os.path.getsize(CLIENT_ROOT_PATH + file_name))
 
     try:
         code = receive_int32(sock)
@@ -31,24 +49,7 @@ def write_file(sock, file_name):
         print(str(e))
         return
 
-    try:
-        storage_size = receive_int32(sock)
-    except Exception as e:
-        print(str(e))
-        return
-
-    storage = []
-
-    for i in range(storage_size):
-        try:
-            s = receive_str(sock)
-            storage.append(s)
-        except Exception as e:
-            print(str(e))
-            return
-
     print(file_id)
-    print(str(storage))
 
 
 def read_file(sock, file_name):
@@ -75,24 +76,18 @@ def read_file(sock, file_name):
         print(str(e))
         return
 
-    try:
-        storage_size = receive_int32(sock)
-    except Exception as e:
-        print(str(e))
-        return
-
-    storage = []
-
-    for i in range(storage_size):
-        try:
-            s = receive_str(sock)
-            storage.append(s)
-        except Exception as e:
-            print(str(e))
-            return
-
     print(file_id)
-    print(str(storage))
+
+
+def copy_file(sock, source_file_name, destination_file_name):
+    send_int32(sock, CMD_COPY_FILE)
+    send_str(sock, source_file_name)
+    send_str(sock, destination_file_name)
+    code = receive_int32(sock)
+    if code != CODE_OK:
+        print('error with code %d' % code)
+        return
+    print('file copied')
 
 
 def open_directory(sock, directory_name):
@@ -143,48 +138,52 @@ def move_file(sock, file_name, new_path):
     print('mv response: ' + ret)
 
 
-def main():
-    # host = sys.argv[len(sys.argv) - 2]
-    # port = int(sys.argv[len(sys.argv) - 1])
+def send_command_to_naming_server(cmd, args):
     host = 'localhost'
-    port = 8800
+    port = NAMING_SERVER_PORT
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((host, port))
 
-    cmd = ''
+    if cmd == 'cf' and len(args) == 1:
+        confirm_file_upload(sock, args[0])
+    elif cmd == 's' and len(args) == 0:
+        get_storage(sock)
+    elif cmd == 'w' and len(args) == 1:
+        write_file(sock, args[0])
+    elif cmd == 'r' and len(args) == 1:
+        read_file(sock, args[0])
+    elif cmd == 'c' and len(args) == 2:
+        copy_file(sock, args[0], args[1])
+    elif cmd == 'cd' and len(args) == 1:
+        open_directory(sock, args[0])
+    elif cmd == 'ls' and len(args) == 0:
+        read_directory(sock)
+    elif cmd == 'mkdir' and len(args) == 1:
+        make_directory(sock, args[0])
+    elif cmd == 'rmdir' and len(args) == 1:
+        delete_directory(sock, args[0])
+    elif cmd == 'init' and len(args) == 0:
+        init_server(sock)
+    elif cmd == 'info' and len(args) == 1:
+        file_info(sock, args[0])
+    elif cmd == 'mv' and len(args) == 2:
+        move_file(sock, args[0], args[1])
+    else:
+        print('Command-arguments combination unrecognized')
+
+    sock.close()
+
+
+def main():
     while True:
         inp = input('Enter command: ')
         cmd = inp.split(' ')[0]
-        args = inp.split(' ')[1:]
-
-        if cmd == 'w' and len(args) == 1:
-            write_file(sock, args[0])
-        elif cmd == 'r' and len(args) == 1:
-            read_file(sock, args[0])
-        elif cmd == 'cd' and len(args) == 1:
-            open_directory(sock, args[0])
-        elif cmd == 'ls' and len(args) == 0:
-            read_directory(sock)
-        elif cmd == 'mkdir' and len(args) == 1:
-            make_directory(sock, args[0])
-        elif cmd == 'rmdir' and len(args) == 1:
-            delete_directory(sock, args[0])
-        elif cmd == 'init' and len(args) == 0:
-            init_server(sock)
-        elif cmd == 'info' and len(args) == 1:
-            file_info(sock, args[0])
-        elif cmd == 'mv' and len(args) == 2:
-            move_file(sock, args[0], args[1])
-        elif cmd == 'exit':
-            print('Exiting')
+        if cmd == 'exit':
             break
-        else:
-            print('Command-arguments combination unrecognized')
-
-    sock.send(int32_to_web(CMD_CLOSE_SOCK))
-    sock.close()
+        args = inp.split(' ')[1:]
+        send_command_to_naming_server(cmd, args)
 
 
 if __name__ == "__main__":
