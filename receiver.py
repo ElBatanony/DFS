@@ -8,7 +8,7 @@ def receive_str(sock):
         raise Exception('error during string size reading')
 
     value = sock.recv(value_size).decode('UTF-8')
-    if value is None or value == '':
+    if value is None:
         raise Exception('error during string reading')
 
     return value
