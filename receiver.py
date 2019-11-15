@@ -1,3 +1,5 @@
+import os
+
 from constants import BUFFER_SIZE
 from web_format_converter import web_to_int
 
@@ -28,7 +30,7 @@ def receive_file(sock, file_name, root_dir):
     if file_size is None:
         raise Exception('error during file size reading')
 
-    with open(root_dir + file_name, 'wb') as sw:
+    with open(os.path.join(root_dir, file_name), 'wb') as sw:
 
         received_size = 0
 

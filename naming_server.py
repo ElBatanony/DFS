@@ -1,4 +1,3 @@
-import json
 import socket
 import uuid
 from threading import Thread
@@ -71,7 +70,7 @@ def storage_available(ip, port):
 def initialize():
     global directories
 
-    delete_directory(STORAGE_ROOT_PATH, True)
+    delete_directory(STORAGE_SERVER_ROOT_PATH, True)
     directories = {}
     directories[''] = Directory('')
     return CODE_OK
@@ -194,6 +193,7 @@ class ClientListener(Thread):
         file, directory = write_file_map[file_id]
         directory.files[file.name] = file
         del write_file_map[file_id]
+        print('file "%s" confirmed' % file.name)
 
     def write_file(self):
         try:
@@ -309,60 +309,43 @@ class ClientListener(Thread):
         return move_file_by_path(self.path + '/' + file_name, new_path)
 
     def run(self):
-        while True:
-            try:
-                cmd = web_to_int(self.sock.recv(32))
-            except Exception as e:
-                print(str(e))
-                self._close()
-                return
+        try:
+            cmd = web_to_int(self.sock.recv(32))
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
 
-            if cmd == CMD_INIT:
-                ret = initialize()
-                send_str(self.sock, ret)
-            elif cmd == CMD_GET_STORAGE:
-                self.get_storage()
-            elif cmd == CMD_WRITE_FILE:
-                self.write_file()
-            elif cmd == CMD_READ_FILE:
-                self.read_file()
-
-            # elif cmd == CMD_CREATE_EMPTY_FILE:
-            #     file_path = receive_str(self.sock)
-            #     ret = create_file(file_path)
-            #     send_str(self.sock, ret)
-            # elif cmd == CMD_FILE_INFO:
-            #     file_path = receive_str(self.sock)
-            #     ret = file_info(file_path)
-            #     send_str(self.sock, ret)
-            # elif cmd == CMD_FILE_MOVE:
-            #     file_name = receive_str(self.sock)
-            #     new_path = receive_str(self.sock)
-            #     ret = self.move_file(file_name, new_path)
-            #     send_str(self.sock, ret)
-
-            elif cmd == CMD_CHECK_DIR:
-                directory_path = receive_str(self.sock)
-                ret = check_directory(directory_path)
-                send_str(self.sock, ret)
-            elif cmd == CMD_READ_DIR:
-                directory_path = receive_str(self.sock)
-                ret = read_directory(directory_path)
-                send_str(self.sock, ret)
-            elif cmd == CMD_MAKE_DIR:
-                directory_path = receive_str(self.sock)
-                ret = make_directory(directory_path)
-                send_str(self.sock, ret)
-            elif cmd == CMD_DELETE_DIR:
-                directory_path = receive_str(self.sock)
-                force = receive_str(self.sock)
-                ret = delete_directory(directory_path, force)
-                send_str(self.sock, ret)
-
-            elif cmd == CMD_CLOSE_SOCK:
-                break
-            else:
-                print('Error reading command code.')
+        if cmd == CMD_INIT:
+            ret = initialize()
+            send_str(self.sock, ret)
+        elif cmd == CMD_GET_STORAGE:
+            self.get_storage()
+        elif cmd == CMD_WRITE_FILE:
+            self.write_file()
+        elif cmd == CMD_READ_FILE:
+            self.read_file()
+        elif cmd == CMD_CONFIRM_FILE_UPLOAD:
+            self.confirm_file_upload()
+        elif cmd == CMD_CHECK_DIR:
+            directory_path = receive_str(self.sock)
+            ret = check_directory(directory_path)
+            send_str(self.sock, ret)
+        elif cmd == CMD_READ_DIR:
+            directory_path = receive_str(self.sock)
+            ret = read_directory(directory_path)
+            send_str(self.sock, ret)
+        elif cmd == CMD_MAKE_DIR:
+            directory_path = receive_str(self.sock)
+            ret = make_directory(directory_path)
+            send_str(self.sock, ret)
+        elif cmd == CMD_DELETE_DIR:
+            directory_path = receive_str(self.sock)
+            force = receive_str(self.sock)
+            ret = delete_directory(directory_path, force)
+            send_str(self.sock, ret)
+        else:
+            print('error reading command code')
 
         self._close()
 

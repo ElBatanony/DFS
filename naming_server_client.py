@@ -16,18 +16,24 @@ def get_storage(sock):
     size = receive_int32(sock)
     storage = []
     for i in range(size):
-        storage.append(receive_str(sock))
+        try:
+            storage.append(receive_str(sock))
+        except Exception as e:
+            print(str(e))
+            return
+
+    print('received storage: %s' % str(storage))
     return storage
 
 
 def write_file(sock, file_name):
-    if not os.path.exists(CLIENT_ROOT_PATH + file_name):
-        print('error: file does not exist')
+    if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
+        print('error "file does not exist" received after sending "write_file" from naming server client')
         return
 
     send_int32(sock, CMD_WRITE_FILE)
     send_str(sock, file_name)
-    send_int64(sock, os.path.getsize(CLIENT_ROOT_PATH + file_name))
+    send_int64(sock, os.path.getsize(os.path.join(CLIENT_ROOT_PATH, file_name)))
 
     try:
         code = receive_int32(sock)
@@ -36,7 +42,7 @@ def write_file(sock, file_name):
         return
 
     if code != CODE_OK:
-        print('error with code %d' % code)
+        print('error with code %d received after sending "write_file" from naming server client' % code)
         return
 
     try:
@@ -45,12 +51,12 @@ def write_file(sock, file_name):
         print(str(e))
         return
 
-    print(file_id)
+    print('received file id %s' % file_id)
     return file_id
 
 
 def read_file(sock, file_name):
-    if not os.path.exists(CLIENT_ROOT_PATH + file_name):
+    if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
         print('error: file does not exist')
         return
 

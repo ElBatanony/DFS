@@ -5,12 +5,12 @@ from threading import Thread
 import time
 import stat
 
-from constants import SERVER_ROOT_PATH, STORAGE_SERVER_PORT
+from constants import *
 from naming_server_client import send_command_to_naming_server
-from receiver import receive_str, receive_file
-from sender import send_file, send_str, send_int32
+from receiver import *
+from sender import *
 from status_codes import *
-from web_format_converter import web_to_int, int32_to_web
+from web_format_converter import *
 
 clients = []
 
@@ -118,16 +118,13 @@ class ClientListener(Thread):
             print(str(e))
             self._close()
             return
-
         try:
-            receive_file(self.sock, file_name, SERVER_ROOT_PATH)
+            receive_file(self.sock, file_name, STORAGE_SERVER_ROOT_PATH)
         except Exception as e:
             print(str(e))
             self._close()
             return
-
         send_int32(self.sock, CODE_OK)
-
         send_command_to_naming_server('cf', [file_name])
 
     def read_file(self):
@@ -138,7 +135,7 @@ class ClientListener(Thread):
             self._close()
             return
 
-        if not os.path.isfile(SERVER_ROOT_PATH + file_name):
+        if not os.path.isfile(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
             print('error: file does not exist')
@@ -146,7 +143,7 @@ class ClientListener(Thread):
         else:
             self.sock.send(int32_to_web(CODE_OK))
 
-        send_file(self.sock, file_name, SERVER_ROOT_PATH)
+        send_file(self.sock, file_name, STORAGE_SERVER_ROOT_PATH)
 
     def run(self):
         command_code = web_to_int(self.sock.recv(32))

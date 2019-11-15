@@ -20,7 +20,7 @@ def send_int64(sock, value):
 
 
 def send_file(sock, file_name, root_dir):
-    file_size = os.path.getsize(root_dir + file_name)
+    file_size = os.path.getsize(os.path.join(root_dir, file_name))
     sock.send(int64_to_web(file_size))
 
     sent_file_size = 0
@@ -28,7 +28,7 @@ def send_file(sock, file_name, root_dir):
     if file_size == 0:
         return
 
-    with open(root_dir + file_name, 'rb') as sr:
+    with open(os.path.join(root_dir, file_name), 'rb') as sr:
         print(file_name)
         while sent_file_size <= file_size:
             sock.send(sr.read(BUFFER_SIZE))

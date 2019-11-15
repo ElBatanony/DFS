@@ -96,12 +96,12 @@ def write_file(file_name):
 
     storage_index = 0
     while True:
-        if send_command_to_storage_server(storage[storage_index], 'w', [file_id]):
+        if send_command_to_storage_server(storage[storage_index], 'w', [file_name, file_id]):
             break
         storage_index += 1
         if storage_index == len(storage):
             storage_index = 0
-            storage = send_command_to_naming_server('s')
+            storage = send_command_to_naming_server('s', [])
             if storage is None:
                 print('error: storage server is None')
 
@@ -133,7 +133,7 @@ def open_directory(sock, directory_name):
     global path
 
     if directory_name == '..':
-        if path == STORAGE_ROOT_PATH:
+        if path == STORAGE_SERVER_ROOT_PATH:
             return DIR_OPEN_ROOT
         path = get_prev(path)
         return DIR_OPEN_PREV
@@ -238,5 +238,6 @@ def main():
         naming_server_sock.send(int32_to_web(CMD_CLOSE_SOCK))
         naming_server_sock.close()
 
-    if __name__ == "__main__":
-        main()
+
+if __name__ == "__main__":
+    main()
