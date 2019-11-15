@@ -9,7 +9,7 @@ from storage_server_client import send_command_to_storage_server
 
 clients = []
 
-storage = ['localhost', 'localhost', 'localhost']
+storage = ['127.0.0.1']
 
 directories = {}
 
@@ -56,15 +56,9 @@ def delete_file_by_path(file_path):
     return
 
 
-''' Yet another section '''
-
-
 def storage_available(ip, port):
     # ping storage server
     return True
-
-
-''' Another section '''
 
 
 def initialize():
@@ -162,11 +156,12 @@ def delete_directory(directory_path, force):
 
 class ClientListener(Thread):
 
-    def __init__(self, name: str, sock: socket.socket):
+    def __init__(self, name: str, sock: socket.socket, address):
         super().__init__(daemon=True)
         self.sock = sock
         self.name = name
         self.path = name
+        self.address = address
 
     def _close(self):
         clients.remove(self.sock)
@@ -194,6 +189,10 @@ class ClientListener(Thread):
         directory.files[file.name] = file
         del write_file_map[file_id]
         print('file "%s" confirmed' % file.name)
+
+        for s in storage:
+            if s != self.address:
+                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [self.address, file.id])
 
     def write_file(self):
         try:
@@ -361,9 +360,9 @@ if __name__ == "__main__":
     while True:
         print('naming server listening for client')
 
-        con, addr = sock.accept()
+        con, address = sock.accept()
         clients.append(con)
         name = 'da_client'
-        print(name + ' connected from ' + str(addr[0]))
-        clientListener = ClientListener(name, con)
+        print(name + ' connected from ' + str(address[0]))
+        clientListener = ClientListener(name, con, address[0])
         clientListener.start()

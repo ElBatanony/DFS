@@ -10,6 +10,7 @@ from naming_server_client import send_command_to_naming_server
 from receiver import *
 from sender import *
 from status_codes import *
+from storage_server_client import send_command_to_storage_server
 from web_format_converter import *
 
 clients = []
@@ -25,6 +26,22 @@ class ClientListener(Thread):
         clients.remove(self.sock)
         self.sock.close()
         print(self.name + ' disconnected')
+
+    def replicate_file(self):
+        try:
+            source_address = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+        try:
+            file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            self._close()
+            return
+        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name])
+        send_int32(self.sock, CODE_OK)
 
     def get_file_info(self):
         try:
@@ -125,7 +142,7 @@ class ClientListener(Thread):
             self._close()
             return
         send_int32(self.sock, CODE_OK)
-        send_command_to_naming_server('cf', [file_name])
+        send_command_to_naming_server(CMD_CONFIRM_FILE_UPLOAD, [file_name])
 
     def read_file(self):
         try:
@@ -160,6 +177,8 @@ class ClientListener(Thread):
             self.create_empty_file()
         elif command_code == CMD_FILE_INFO:
             self.get_file_info()
+        elif command_code == CMD_REPLICATE_FILE:
+            self.replicate_file()
         else:
             print('error reading command code %d' % command_code)
         self.sock.close()

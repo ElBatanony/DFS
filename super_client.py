@@ -69,12 +69,12 @@ def init_server(sock):
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
 
-def create_file(sock, file_name):
+def create_file(sock, file_name: str):
     file_path = path + '/' + file_name
 
     Path(file_path).touch()
 
-    ret = write_file(sock, file_name)
+    ret = write_file(file_name)
     if ret != CODE_OK:
         print("Error with creating an empty file on server. Error: " + ret)
 
@@ -82,31 +82,31 @@ def create_file(sock, file_name):
     return ret
 
 
-def read_file(sock, file_name):
+def read_file(sock: socket.socket, file_name: str):
     return CODE_OK
 
 
-def write_file(file_name):
-    storage = send_command_to_naming_server('s', [])
+def write_file(file_name: str):
+    storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
 
-    file_id = send_command_to_naming_server('w', [file_name])
+    file_id = send_command_to_naming_server(CMD_WRITE_FILE, [file_name])
     if file_id is None:
         print('error: file_id is None')
         return
 
     storage_index = 0
     while True:
-        if send_command_to_storage_server(storage[storage_index], 'w', [file_name, file_id]):
+        if send_command_to_storage_server(storage[storage_index], CMD_WRITE_FILE, [file_name, file_id]):
             break
         storage_index += 1
         if storage_index == len(storage):
             storage_index = 0
-            storage = send_command_to_naming_server('s', [])
+            storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
             if storage is None:
                 print('error: storage server is None')
 
 
-def delete_file(sock, file_name):
+def delete_file(sock: socket.socket, file_name: str):
     return CODE_OK
 
 

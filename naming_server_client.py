@@ -141,7 +141,7 @@ def move_file(sock, file_name, new_path):
     print('mv response: ' + ret)
 
 
-def send_command_to_naming_server(cmd, args):
+def send_command_to_naming_server(cmd: int, args):
     host = 'localhost'
     port = NAMING_SERVER_PORT
 
@@ -150,35 +150,62 @@ def send_command_to_naming_server(cmd, args):
     sock.connect((host, port))
 
     result = None
-    if cmd == 'cf' and len(args) == 1:
+    if cmd == CMD_CONFIRM_FILE_UPLOAD and len(args) == 1:
         result = confirm_file_upload(sock, args[0])
-    elif cmd == 's' and len(args) == 0:
+    elif cmd == CMD_GET_STORAGE and len(args) == 0:
         result = get_storage(sock)
-    elif cmd == 'w' and len(args) == 1:
+    elif cmd == CMD_WRITE_FILE and len(args) == 1:
         result = write_file(sock, args[0])
-    elif cmd == 'r' and len(args) == 1:
+    elif cmd == CMD_READ_FILE and len(args) == 1:
         result = read_file(sock, args[0])
-    elif cmd == 'c' and len(args) == 2:
+    elif cmd == CMD_COPY_FILE and len(args) == 2:
         result = copy_file(sock, args[0], args[1])
-    elif cmd == 'cd' and len(args) == 1:
+    elif cmd == CMD_OPEN_DIR and len(args) == 1:
         result = open_directory(sock, args[0])
-    elif cmd == 'ls' and len(args) == 0:
+    elif cmd == CMD_READ_DIR and len(args) == 0:
         result = read_directory(sock)
-    elif cmd == 'mkdir' and len(args) == 1:
+    elif cmd == CMD_MAKE_DIR and len(args) == 1:
         result = make_directory(sock, args[0])
-    elif cmd == 'rmdir' and len(args) == 1:
+    elif cmd == CMD_DELETE_DIR and len(args) == 1:
         result = delete_directory(sock, args[0])
-    elif cmd == 'init' and len(args) == 0:
+    elif cmd == CMD_INIT and len(args) == 0:
         result = init_server(sock)
-    elif cmd == 'info' and len(args) == 1:
+    elif cmd == CMD_FILE_INFO and len(args) == 1:
         result = file_info(sock, args[0])
-    elif cmd == 'mv' and len(args) == 2:
+    elif cmd == CMD_FILE_MOVE and len(args) == 2:
         result = move_file(sock, args[0], args[1])
     else:
         print('Command-arguments combination unrecognized')
 
     sock.close()
     return result
+
+
+def get_command_from_str(cmd: str):
+    if cmd == 'cf':
+        return CMD_CONFIRM_FILE_UPLOAD
+    elif cmd == 's':
+        return CMD_GET_STORAGE
+    elif cmd == 'w':
+        return CMD_WRITE_FILE
+    elif cmd == 'r':
+        return CMD_READ_FILE
+    elif cmd == 'c':
+        return CMD_COPY_FILE
+    elif cmd == 'cd':
+        return CMD_OPEN_DIR
+    elif cmd == 'ls':
+        return CMD_READ_DIR
+    elif cmd == 'mkdir':
+        return CMD_MAKE_DIR
+    elif cmd == 'rmdir':
+        return CMD_DELETE_DIR
+    elif cmd == 'init':
+        return CMD_INIT
+    elif cmd == 'info':
+        return CMD_FILE_INFO
+    elif cmd == 'mv':
+        return CMD_FILE_MOVE
 
 
 def main():
@@ -188,7 +215,7 @@ def main():
         if cmd == 'exit':
             break
         args = inp.split(' ')[1:]
-        send_command_to_naming_server(cmd, args)
+        send_command_to_naming_server(get_command_from_str(cmd), args)
 
 
 if __name__ == "__main__":
