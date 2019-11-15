@@ -1,5 +1,4 @@
 import socket
-import os
 import shutil
 from pathlib import Path
 
@@ -19,29 +18,31 @@ def get_prev(path): return '/'.join(path.split('/')[:-1])
 def get_last(path): return path.split('/')[-1]
 
 
-def openSocket(ip, port):
+def open_socket(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, port))
     return sock
 
 
-def storagePath():
+def storage_path():
     return '/'.join(path.split('/')[1:])
 
 
-def storagePathPlus():
-    sp = storagePath()
+def storage_path_plus():
+    sp = storage_path()
     if sp != '': return sp + '/'
     return sp
 
 
-def pathPlus():
+def path_plus():
     if path != '': return path + '/'
     return path
 
 
 def init_server(sock):
+    global path
+
     # Send initialize command to naming server
     send_int32(sock, CMD_INIT)
     # Receive confirmation that it was completed
@@ -58,7 +59,12 @@ def init_server(sock):
         print("Error: %s - %s." % (e.filename, e.strerror))
 
     # Recreate the local dfs directory
-    os.mkdir(CLIENT_ROOT_PATH)
+    try:
+        os.mkdir(CLIENT_ROOT_PATH)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
+
+    path = CLIENT_ROOT_PATH
 
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
@@ -133,14 +139,14 @@ def open_directory(sock, directory_name):
         return DIR_OPEN_PREV
 
     send_int32(sock, CMD_CHECK_DIR)
-    send_str(sock, storagePathPlus() + directory_name)
+    send_str(sock, storage_path_plus() + directory_name)
     dir_exists = receive_str(sock)
 
-    if dir_exists != CODE_OK:
-        print('Directory does not exist')
+    if dir_exists != str(CODE_OK):
+        print('Directory does not exist. Error: ' + dir_exists)
         return DIR_OPEN_NOT_EXIST
 
-    path = pathPlus() + directory_name
+    path = path_plus() + directory_name
 
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -151,7 +157,8 @@ def open_directory(sock, directory_name):
 def read_directory(sock):
     # make sure that directory exists on machine
     send_int32(sock, CMD_READ_DIR)
-    send_str(sock, storagePathPlus())
+    send_str(sock, storage_path())
+
     dir = receive_str(sock)
     print('ls response: ' + dir)
 
@@ -159,26 +166,40 @@ def read_directory(sock):
 def make_directory(sock, directory_name):
     # make sure that directory exists on machine
     send_int32(sock, CMD_MAKE_DIR)
-    directory_path = storagePathPlus() + directory_name
+    directory_path = storage_path_plus() + directory_name
     send_str(sock, directory_path)
     ret = receive_str(sock)
+    if not os.path.isdir(path_plus() + directory_name):
+        os.mkdir(path_plus() + directory_name)
     print('mkdir response: ' + ret)
 
 
 def delete_directory(sock, directory_name, force=False):
     # make sure that directory exists on machine
     send_int32(sock, CMD_DELETE_DIR)
-    directory_path = storagePathPlus() + directory_name
+    directory_path = storage_path_plus() + directory_name
     send_str(sock, directory_path)
     send_str(sock, force)
     ret = receive_str(sock)
+    try:
+        shutil.rmtree(path_plus() + directory_name)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
     print('rmdir response: ' + ret)
 
 
 def main():
+    if not os.path.isdir(CLIENT_ROOT_PATH):
+        os.mkdir(CLIENT_ROOT_PATH)
+
     cmd = ''
     while True:
-        naming_server_sock = openSocket(
+
+        if cmd == 'exit':
+            print('Exiting')
+            break
+
+        naming_server_sock = open_socket(
             NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
         inp = input('Enter command: ')
         cmd = inp.split(' ')[0]
@@ -211,16 +232,11 @@ def main():
             delete_directory(naming_server_sock, args[0])
         elif cmd == 'rmdir' and len(args) == 2:
             delete_directory(naming_server_sock, args[0], args[1])
-
-        elif cmd == 'exit':
-            print('Exiting')
-            break
         else:
             print('Command-arguments combination unrecognized')
 
         naming_server_sock.send(int32_to_web(CMD_CLOSE_SOCK))
         naming_server_sock.close()
 
-
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()

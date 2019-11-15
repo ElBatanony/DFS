@@ -32,6 +32,13 @@ class File:
         self.id = str(uuid.uuid4())
 
 
+def directories_str():
+    ret = ''
+    for k in directories:
+        ret += k
+    return ret
+
+
 def get_prev(path):
     return '/'.join(path.split('/')[:-1])
 
@@ -62,8 +69,11 @@ def storage_available(ip, port):
 
 
 def initialize():
+    global directories
+
     delete_directory(STORAGE_ROOT_PATH, True)
-    directories[STORAGE_ROOT_PATH] = Directory(STORAGE_ROOT_PATH)
+    directories = {}
+    directories[''] = Directory('')
     return CODE_OK
 
 
@@ -94,6 +104,7 @@ def move_file_by_path(file_path, new_path):
 
 
 def check_directory(directory_path):
+    print('checking dir ' + directory_path)
     if directory_path in directories:
         return CODE_OK
     else:
@@ -113,6 +124,7 @@ def read_directory(directory_path):
 
 
 def make_directory(directory_path):
+    print('make dir ' + directory_path)
     if directory_path in directories:
         return CODE_DIRECTORY_ALREADY_EXIST
     directories[directory_path] = Directory(directory_path)
@@ -122,6 +134,7 @@ def make_directory(directory_path):
 
 
 def delete_directory(directory_path, force):
+    print('del dir ' + directory_path)
     if directory_path in directories:
         dir_files = directories[directory_path].files
         dir_dir = directories[directory_path].directories
@@ -136,9 +149,11 @@ def delete_directory(directory_path, force):
             delete_directory(directory_path + '/' + dir, True)
 
         directory_name = directory_path.split('/')[-1]
+
         # if get_prev(directory_path) != '':
-        directories[get_prev(directory_path)].directories.remove(
-            directory_name)
+        if directory_name in directories[get_prev(directory_path)].directories:
+            directories[get_prev(directory_path)].directories.remove(
+                directory_name)
         del directories[directory_path]
 
         return DIR_DELETE_OK

@@ -128,3 +128,7 @@ dmypy.json
 #.idea files
 *.iml
 *.xml
+
+client_files/
+local_dfs/
+storage_server/
