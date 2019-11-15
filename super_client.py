@@ -69,7 +69,7 @@ def init_server(sock):
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
 
-def create_file(sock, file_name: str):
+def create_file(file_name: str):
     file_path = path + '/' + file_name
 
     Path(file_path).touch()
@@ -82,8 +82,24 @@ def create_file(sock, file_name: str):
     return ret
 
 
-def read_file(sock: socket.socket, file_name: str):
-    return CODE_OK
+def read_file(file_name: str):
+    storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
+
+    file_id = send_command_to_naming_server(CMD_READ_FILE, [file_name])
+    if file_id is None:
+        print('error: file_id is None')
+        return
+
+    storage_index = 0
+    while True:
+        if send_command_to_storage_server(storage[storage_index], CMD_READ_FILE, [file_id, file_name]):
+            break
+        storage_index += 1
+        if storage_index == len(storage):
+            storage_index = 0
+            storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
+            if storage is None:
+                print('error: storage server is None')
 
 
 def write_file(file_name: str):
@@ -213,6 +229,8 @@ def main():
         #     read_file(naming_server_sock, args[0])
         elif cmd == 'w' and len(args) == 1:
             write_file(args[0])
+        elif cmd == 'r' and len(args) == 1:
+            read_file(args[0])
         # elif cmd == 'del' and len(args) == 1:
         #     delete_file(sock, args[0])
         # elif cmd == 'info' and len(args) == 1:

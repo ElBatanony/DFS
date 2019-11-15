@@ -56,10 +56,6 @@ def write_file(sock, file_name):
 
 
 def read_file(sock, file_name):
-    if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
-        print('error: file does not exist')
-        return
-
     send_int32(sock, CMD_READ_FILE)
     send_str(sock, file_name)
 
@@ -79,7 +75,8 @@ def read_file(sock, file_name):
         print(str(e))
         return
 
-    print(file_id)
+    print('received file id %s' % file_id)
+    return file_id
 
 
 def copy_file(sock, source_file_name, destination_file_name):
