@@ -34,6 +34,8 @@ def pathPlus():
 
 def init_server(sock):
 
+    global path
+
     # Send initialize command to naming server
     send_int32(sock, CMD_INIT)
     # Receive confirmation that it was completed
@@ -50,8 +52,13 @@ def init_server(sock):
         print("Error: %s - %s." % (e.filename, e.strerror))
     
     # Recreate the local dfs directory
-    os.mkdir(CLIENT_ROOT_PATH)
+    try:
+        os.mkdir(CLIENT_ROOT_PATH)
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
 
+    path = CLIENT_ROOT_PATH
+    
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
 def create_file(sock, file_name):
@@ -131,8 +138,8 @@ def make_directory(sock, directory_name):
     directory_path = storagePathPlus() + directory_name
     send_str(sock, directory_path)
     ret = receive_str(sock)
-    if not os.path.isdir(path):
-        os.mkdir(path)
+    if not os.path.isdir( pathPlus() + directory_name ):
+        os.mkdir( pathPlus() + directory_name )
     print('mkdir response: ' + ret)
 
 def delete_directory(sock, directory_name, force=False):
@@ -142,9 +149,16 @@ def delete_directory(sock, directory_name, force=False):
     send_str(sock, directory_path)
     send_str(sock, force)
     ret = receive_str(sock)
+    try:
+        shutil.rmtree( pathPlus() + directory_name )
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
     print('rmdir response: ' + ret)
 
 def main():
+
+    if not os.path.isdir(CLIENT_ROOT_PATH):
+        os.mkdir(CLIENT_ROOT_PATH)
 
     cmd = ''
     while True:

@@ -59,8 +59,12 @@ def storage_available(ip,port):
 ''' Another section '''
 
 def initialize():
+
+    global directories
+
     delete_directory(STORAGE_ROOT_PATH, True)
-    directories[STORAGE_ROOT_PATH] = Directory(STORAGE_ROOT_PATH)
+    directories = {}
+    directories[''] = Directory('')
     return CODE_OK
 
 def create_file(file_path):
@@ -131,7 +135,8 @@ def delete_directory(directory_path, force):
 
         directory_name = directory_path.split('/')[-1]
         #if get_prev(directory_path) != '':
-        directories[get_prev(directory_path)].directories.remove(
+        if directory_name in directories[get_prev(directory_path)].directories:
+            directories[get_prev(directory_path)].directories.remove(
                 directory_name)
         del directories[directory_path]
 
