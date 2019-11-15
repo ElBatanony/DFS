@@ -9,6 +9,14 @@ from sender import *
 def confirm_file_upload(sock, file_id):
     send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
     send_str(sock, file_id)
+    try:
+        code = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return False
+    if code != CODE_OK:
+        return False
+    return True
 
 
 def get_storage(sock):
@@ -20,7 +28,7 @@ def get_storage(sock):
             storage.append(receive_str(sock))
         except Exception as e:
             print(str(e))
-            return
+            return False
 
     print('received storage: %s' % str(storage))
     return storage
@@ -29,7 +37,7 @@ def get_storage(sock):
 def write_file(sock, file_name):
     if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
         print('error "file does not exist" received after sending "write_file" from naming server client')
-        return
+        return False
 
     send_int32(sock, CMD_WRITE_FILE)
     send_str(sock, file_name)
@@ -39,17 +47,17 @@ def write_file(sock, file_name):
         code = receive_int32(sock)
     except Exception as e:
         print(str(e))
-        return
+        return False
 
     if code != CODE_OK:
         print('error with code %d received after sending "write_file" from naming server client' % code)
-        return
+        return False
 
     try:
         file_id = receive_str(sock)
     except Exception as e:
         print(str(e))
-        return
+        return False
 
     print('received file id %s' % file_id)
     return file_id
@@ -63,17 +71,17 @@ def read_file(sock, file_name):
         code = receive_int32(sock)
     except Exception as e:
         print(str(e))
-        return
+        return False
 
     if code != CODE_OK:
         print('error with code %d' % code)
-        return
+        return False
 
     try:
         file_id = receive_str(sock)
     except Exception as e:
         print(str(e))
-        return
+        return False
 
     print('received file id %s' % file_id)
     return file_id
@@ -83,11 +91,16 @@ def copy_file(sock, source_file_name, destination_file_name):
     send_int32(sock, CMD_COPY_FILE)
     send_str(sock, source_file_name)
     send_str(sock, destination_file_name)
-    code = receive_int32(sock)
+    try:
+        code = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return False
     if code != CODE_OK:
         print('error with code %d' % code)
-        return
+        return False
     print('file copied')
+    return True
 
 
 def open_directory(sock, directory_name):

@@ -82,26 +82,6 @@ def create_file(file_name: str):
     return ret
 
 
-def read_file(file_name: str):
-    storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
-
-    file_id = send_command_to_naming_server(CMD_READ_FILE, [file_name])
-    if file_id is None:
-        print('error: file_id is None')
-        return
-
-    storage_index = 0
-    while True:
-        if send_command_to_storage_server(storage[storage_index], CMD_READ_FILE, [file_id, file_name]):
-            break
-        storage_index += 1
-        if storage_index == len(storage):
-            storage_index = 0
-            storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
-            if storage is None:
-                print('error: storage server is None')
-
-
 def write_file(file_name: str):
     storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
 
@@ -122,6 +102,33 @@ def write_file(file_name: str):
                 print('error: storage server is None')
 
 
+def read_file(file_name: str):
+    storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
+
+    file_id = send_command_to_naming_server(CMD_READ_FILE, [file_name])
+    if file_id is None:
+        print('error: file_id is None')
+        return
+
+    storage_index = 0
+    while True:
+        if send_command_to_storage_server(storage[storage_index], CMD_READ_FILE, [file_id, file_name]):
+            break
+        storage_index += 1
+        if storage_index == len(storage):
+            storage_index = 0
+            storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
+            if storage is None:
+                print('error: storage server is None')
+
+
+def copy_file(old_file_name: str, new_file_name: str):
+    if not send_command_to_naming_server(CMD_COPY_FILE, [old_file_name, new_file_name]):
+        print('error while copying the file')
+        return
+    shutil.copy(os.path.join(CLIENT_ROOT_PATH, old_file_name), os.path.join(CLIENT_ROOT_PATH, new_file_name))
+
+
 def delete_file(sock: socket.socket, file_name: str):
     return CODE_OK
 
@@ -131,10 +138,6 @@ def file_info(sock, file_name):
     send_str(sock, file_name)
     ret = receive_str(sock)
     print('info response: ' + ret)
-
-
-def copy_file(sock, file_name):
-    return
 
 
 def move_file(sock, file_name, new_path):
@@ -223,23 +226,12 @@ def main():
 
         if cmd == 'init' and len(args) == 0:
             init_server(naming_server_sock)
-        # elif cmd == 'touch' and len(args) == 1:
-        #     create_file(naming_server_sock, args[0])
-        # elif cmd == 'r' and len(args) == 1:
-        #     read_file(naming_server_sock, args[0])
         elif cmd == 'w' and len(args) == 1:
             write_file(args[0])
         elif cmd == 'r' and len(args) == 1:
             read_file(args[0])
-        # elif cmd == 'del' and len(args) == 1:
-        #     delete_file(sock, args[0])
-        # elif cmd == 'info' and len(args) == 1:
-        #     file_info(naming_server_sock, args[0])
-        # elif cmd == 'copy' and len(args) == 1:
-        #     copy_file(sock, args[0])
-        # elif cmd == 'mv' and len(args) == 2:
-        #     move_file(sock, args[0], args[1])
-
+        elif cmd == 'c' and len(args) == 2:
+            copy_file(args[0], args[1])
         elif cmd == 'cd' and len(args) == 1:
             open_directory(naming_server_sock, args[0])
         elif cmd == 'ls' and len(args) == 0:

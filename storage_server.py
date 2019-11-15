@@ -122,8 +122,9 @@ class ClientListener(Thread):
             self._close()
             return
 
-        if os.path.exists(old_file_name):
-            shutil.copyfile(old_file_name, new_file_name)
+        if os.path.exists(os.path.join(STORAGE_SERVER_ROOT_PATH, old_file_name)):
+            shutil.copyfile(os.path.join(STORAGE_SERVER_ROOT_PATH, old_file_name),
+                            os.path.join(STORAGE_SERVER_ROOT_PATH, new_file_name))
             self.sock.send(int32_to_web(CODE_OK))
         else:
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))

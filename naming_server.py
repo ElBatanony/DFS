@@ -194,6 +194,8 @@ class ClientListener(Thread):
             if s != self.address:
                 send_command_to_storage_server(s, CMD_REPLICATE_FILE, [self.address, file.id])
 
+        send_int32(self.sock, CODE_OK)
+
     def write_file(self):
         try:
             full_file_name = receive_str(self.sock)
@@ -290,14 +292,16 @@ class ClientListener(Thread):
         storage_index = 0
         while True:
             try:
-                send_command_to_storage_server(source_file.storage[storage_index],
-                                               ['c', source_file.id, destination_file.id])
+                send_command_to_storage_server(storage[storage_index], CMD_COPY_FILE,
+                                               [source_file.id, destination_file.id])
                 break
             except Exception as e:
                 print(str(e))
                 storage_index += 1
+                if storage_index >= len(storage):
+                    storage_index = 0
 
-        send_int32(sock, CODE_OK)
+        send_int32(self.sock, CODE_OK)
 
     def delete_file(self, file_name):
         return delete_file_by_path(self.path + '/' + file_name)
@@ -324,6 +328,8 @@ class ClientListener(Thread):
             self.write_file()
         elif cmd == CMD_READ_FILE:
             self.read_file()
+        elif cmd == CMD_COPY_FILE:
+            self.copy_file()
         elif cmd == CMD_CONFIRM_FILE_UPLOAD:
             self.confirm_file_upload()
         elif cmd == CMD_CHECK_DIR:
