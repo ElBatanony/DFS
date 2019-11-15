@@ -6,8 +6,9 @@ import time
 import stat
 
 from constants import SERVER_ROOT_PATH, STORAGE_SERVER_PORT
+from naming_server_client import send_command_to_naming_server
 from receiver import receive_str, receive_file
-from sender import send_file, send_str
+from sender import send_file, send_str, send_int32
 from status_codes import *
 from web_format_converter import web_to_int, int32_to_web
 
@@ -124,6 +125,10 @@ class ClientListener(Thread):
             print(str(e))
             self._close()
             return
+
+        send_int32(self.sock, CODE_OK)
+
+        send_command_to_naming_server('cf', [file_name])
 
     def read_file(self):
         try:

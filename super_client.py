@@ -4,15 +4,20 @@ import shutil
 from pathlib import Path
 
 from constants import *
+from naming_server_client import send_command_to_naming_server
 from status_codes import *
 from receiver import *
 from sender import *
+from storage_server_client import send_command_to_storage_server
 
 path = CLIENT_ROOT_PATH
 
+
 def get_prev(path): return '/'.join(path.split('/')[:-1])
 
+
 def get_last(path): return path.split('/')[-1]
+
 
 def openSocket(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,20 +25,23 @@ def openSocket(ip, port):
     sock.connect((ip, port))
     return sock
 
+
 def storagePath():
-    return '/'.join( path.split('/')[1:] )
+    return '/'.join(path.split('/')[1:])
+
 
 def storagePathPlus():
     sp = storagePath()
     if sp != '': return sp + '/'
     return sp
-    
+
+
 def pathPlus():
     if path != '': return path + '/'
     return path
 
-def init_server(sock):
 
+def init_server(sock):
     # Send initialize command to naming server
     send_int32(sock, CMD_INIT)
     # Receive confirmation that it was completed
@@ -48,16 +56,16 @@ def init_server(sock):
         shutil.rmtree(CLIENT_ROOT_PATH)
     except OSError as e:
         print("Error: %s - %s." % (e.filename, e.strerror))
-    
+
     # Recreate the local dfs directory
     os.mkdir(CLIENT_ROOT_PATH)
 
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
-def create_file(sock, file_name):
 
-    file_path = path+'/'+file_name
-    
+def create_file(sock, file_name):
+    file_path = path + '/' + file_name
+
     Path(file_path).touch()
 
     ret = write_file(sock, file_name)
@@ -71,11 +79,30 @@ def create_file(sock, file_name):
 def read_file(sock, file_name):
     return CODE_OK
 
-def write_file(sock, file_name):
-    return CODE_OK
+
+def write_file(file_name):
+    storage = send_command_to_naming_server('s', [])
+
+    file_id = send_command_to_naming_server('w', [file_name])
+    if file_id is None:
+        print('error: file_id is None')
+        return
+
+    storage_index = 0
+    while True:
+        if send_command_to_storage_server(storage[storage_index], 'w', [file_id]):
+            break
+        storage_index += 1
+        if storage_index == len(storage):
+            storage_index = 0
+            storage = send_command_to_naming_server('s')
+            if storage is None:
+                print('error: storage server is None')
+
 
 def delete_file(sock, file_name):
     return CODE_OK
+
 
 def file_info(sock, file_name):
     send_int32(sock, CMD_FILE_INFO)
@@ -83,8 +110,10 @@ def file_info(sock, file_name):
     ret = receive_str(sock)
     print('info response: ' + ret)
 
+
 def copy_file(sock, file_name):
     return
+
 
 def move_file(sock, file_name, new_path):
     send_int32(sock, CMD_FILE_MOVE)
@@ -93,8 +122,8 @@ def move_file(sock, file_name, new_path):
     ret = receive_str(sock)
     print('mv response: ' + ret)
 
-def open_directory(sock, directory_name):
 
+def open_directory(sock, directory_name):
     global path
 
     if directory_name == '..':
@@ -102,28 +131,30 @@ def open_directory(sock, directory_name):
             return DIR_OPEN_ROOT
         path = get_prev(path)
         return DIR_OPEN_PREV
-    
+
     send_int32(sock, CMD_CHECK_DIR)
-    send_str(sock, storagePathPlus() + directory_name )
+    send_str(sock, storagePathPlus() + directory_name)
     dir_exists = receive_str(sock)
 
     if dir_exists != CODE_OK:
         print('Directory does not exist')
         return DIR_OPEN_NOT_EXIST
-    
+
     path = pathPlus() + directory_name
 
     if not os.path.isdir(path):
         os.mkdir(path)
-        
+
     return DIR_OPEN_OK
-    
+
+
 def read_directory(sock):
     # make sure that directory exists on machine
     send_int32(sock, CMD_READ_DIR)
-    send_str(sock, storagePathPlus() )
+    send_str(sock, storagePathPlus())
     dir = receive_str(sock)
     print('ls response: ' + dir)
+
 
 def make_directory(sock, directory_name):
     # make sure that directory exists on machine
@@ -132,6 +163,7 @@ def make_directory(sock, directory_name):
     send_str(sock, directory_path)
     ret = receive_str(sock)
     print('mkdir response: ' + ret)
+
 
 def delete_directory(sock, directory_name, force=False):
     # make sure that directory exists on machine
@@ -142,8 +174,8 @@ def delete_directory(sock, directory_name, force=False):
     ret = receive_str(sock)
     print('rmdir response: ' + ret)
 
-def main():
 
+def main():
     cmd = ''
     while True:
         naming_server_sock = openSocket(
@@ -154,13 +186,12 @@ def main():
 
         if cmd == 'init' and len(args) == 0:
             init_server(naming_server_sock)
-
         # elif cmd == 'touch' and len(args) == 1:
         #     create_file(naming_server_sock, args[0])
         # elif cmd == 'r' and len(args) == 1:
         #     read_file(naming_server_sock, args[0])
-        # elif cmd == 'w' and len(args) == 1:
-        #     write_file(sock, args[0])
+        elif cmd == 'w' and len(args) == 1:
+            write_file(args[0])
         # elif cmd == 'del' and len(args) == 1:
         #     delete_file(sock, args[0])
         # elif cmd == 'info' and len(args) == 1:
@@ -169,7 +200,7 @@ def main():
         #     copy_file(sock, args[0])
         # elif cmd == 'mv' and len(args) == 2:
         #     move_file(sock, args[0], args[1])
-        
+
         elif cmd == 'cd' and len(args) == 1:
             open_directory(naming_server_sock, args[0])
         elif cmd == 'ls' and len(args) == 0:
@@ -189,6 +220,7 @@ def main():
 
         naming_server_sock.send(int32_to_web(CMD_CLOSE_SOCK))
         naming_server_sock.close()
+
 
 if __name__ == "__main__":
     main()

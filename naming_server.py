@@ -35,32 +35,41 @@ class File:
 def get_prev(path):
     return '/'.join(path.split('/')[:-1])
 
+
 def get_last(path):
     return path.split('/')[-1]
+
 
 def get_directory_from_full_file_name(file_name):
     if len(file_name.split('/')) == 1:
         return ''
     return get_prev(file_name)
 
+
 def delete_file_by_path(file_path):
     return
 
+
 ''' Yet another section '''
 
-def storage_available(ip,port):
+
+def storage_available(ip, port):
     # ping storage server
     return True
 
+
 ''' Another section '''
+
 
 def initialize():
     delete_directory(STORAGE_ROOT_PATH, True)
     directories[STORAGE_ROOT_PATH] = Directory(STORAGE_ROOT_PATH)
     return CODE_OK
 
+
 def create_file(file_path):
     return
+
 
 def file_info(file_path):
     file_dir = get_prev(file_path)
@@ -83,11 +92,13 @@ def move_file_by_path(file_path, new_path):
 
 ''' Directory Functions '''
 
+
 def check_directory(directory_path):
     if directory_path in directories:
         return CODE_OK
     else:
         return CODE_DIRECTORY_NOT_EXIST
+
 
 def read_directory(directory_path):
     if directory_path in directories:
@@ -100,6 +111,7 @@ def read_directory(directory_path):
     else:
         return CODE_DIRECTORY_NOT_EXIST
 
+
 def make_directory(directory_path):
     if directory_path in directories:
         return CODE_DIRECTORY_ALREADY_EXIST
@@ -107,6 +119,7 @@ def make_directory(directory_path):
     directory_name = get_last(directory_path)
     directories[get_prev(directory_path)].directories.append(directory_name)
     return DIR_MAKE_OK
+
 
 def delete_directory(directory_path, force):
     if directory_path in directories:
@@ -123,9 +136,9 @@ def delete_directory(directory_path, force):
             delete_directory(directory_path + '/' + dir, True)
 
         directory_name = directory_path.split('/')[-1]
-        #if get_prev(directory_path) != '':
+        # if get_prev(directory_path) != '':
         directories[get_prev(directory_path)].directories.remove(
-                directory_name)
+            directory_name)
         del directories[directory_path]
 
         return DIR_DELETE_OK
@@ -292,15 +305,17 @@ class ClientListener(Thread):
             if cmd == CMD_INIT:
                 ret = initialize()
                 send_str(self.sock, ret)
+            elif cmd == CMD_GET_STORAGE:
+                self.get_storage()
+            elif cmd == CMD_WRITE_FILE:
+                self.write_file()
+            elif cmd == CMD_READ_FILE:
+                self.read_file()
 
             # elif cmd == CMD_CREATE_EMPTY_FILE:
             #     file_path = receive_str(self.sock)
             #     ret = create_file(file_path)
             #     send_str(self.sock, ret)
-            # if cmd == CMD_WRITE_FILE:
-            #     self.write_file()
-            # elif cmd == CMD_READ_FILE:
-            #     self.read_file()
             # elif cmd == CMD_FILE_INFO:
             #     file_path = receive_str(self.sock)
             #     ret = file_info(file_path)
