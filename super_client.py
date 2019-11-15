@@ -27,7 +27,7 @@ def storagePathPlus():
     sp = storagePath()
     if sp != '': return sp + '/'
     return sp
-    
+
 def pathPlus():
     if path != '': return path + '/'
     return path
@@ -107,8 +107,8 @@ def open_directory(sock, directory_name):
     send_str(sock, storagePathPlus() + directory_name )
     dir_exists = receive_str(sock)
 
-    if dir_exists != CODE_OK:
-        print('Directory does not exist')
+    if dir_exists != str(CODE_OK):
+        print('Directory does not exist. Error: ' + dir_exists)
         return DIR_OPEN_NOT_EXIST
     
     path = pathPlus() + directory_name
@@ -121,7 +121,7 @@ def open_directory(sock, directory_name):
 def read_directory(sock):
     # make sure that directory exists on machine
     send_int32(sock, CMD_READ_DIR)
-    send_str(sock, storagePathPlus() )
+    send_str(sock, storagePath() )
     dir = receive_str(sock)
     print('ls response: ' + dir)
 
@@ -131,6 +131,8 @@ def make_directory(sock, directory_name):
     directory_path = storagePathPlus() + directory_name
     send_str(sock, directory_path)
     ret = receive_str(sock)
+    if not os.path.isdir(path):
+        os.mkdir(path)
     print('mkdir response: ' + ret)
 
 def delete_directory(sock, directory_name, force=False):
@@ -146,6 +148,11 @@ def main():
 
     cmd = ''
     while True:
+
+        if cmd == 'exit':
+            print('Exiting')
+            break
+
         naming_server_sock = openSocket(
             NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
         inp = input('Enter command: ')
@@ -180,10 +187,6 @@ def main():
             delete_directory(naming_server_sock, args[0])
         elif cmd == 'rmdir' and len(args) == 2:
             delete_directory(naming_server_sock, args[0], args[1])
-
-        elif cmd == 'exit':
-            print('Exiting')
-            break
         else:
             print('Command-arguments combination unrecognized')
 

@@ -17,7 +17,6 @@ directories = {}
 available_storage_servers = []
 write_file_map = {}
 
-
 class Directory:
     def __init__(self, path):
         self.path = path
@@ -31,6 +30,11 @@ class File:
         self.size = size
         self.id = str(uuid.uuid4())
 
+def directoriesStr():
+    ret = ''
+    for k in directories:
+	    ret += k
+    return ret
 
 def get_prev(path):
     return '/'.join(path.split('/')[:-1])
@@ -84,6 +88,7 @@ def move_file_by_path(file_path, new_path):
 ''' Directory Functions '''
 
 def check_directory(directory_path):
+    print('checking dir ' + directory_path )
     if directory_path in directories:
         return CODE_OK
     else:
@@ -101,6 +106,7 @@ def read_directory(directory_path):
         return CODE_DIRECTORY_NOT_EXIST
 
 def make_directory(directory_path):
+    print('make dir ' + directory_path)
     if directory_path in directories:
         return CODE_DIRECTORY_ALREADY_EXIST
     directories[directory_path] = Directory(directory_path)
@@ -109,6 +115,7 @@ def make_directory(directory_path):
     return DIR_MAKE_OK
 
 def delete_directory(directory_path, force):
+    print('del dir ' + directory_path)
     if directory_path in directories:
         dir_files = directories[directory_path].files
         dir_dir = directories[directory_path].directories
