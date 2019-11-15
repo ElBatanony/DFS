@@ -6,18 +6,19 @@ from status_codes import *
 from receiver import *
 from sender import *
 from constants import *
+from storage_server_client import send_command_to_storage_server
 
 clients = []
+
+storage = ['localhost', 'localhost', 'localhost']
 
 directories = {}
 
 available_storage_servers = []
+write_file_map = {}
+
 
 class Directory:
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__,
-                          sort_keys=True, indent=4)
-
     def __init__(self, path):
         self.path = path
         self.directories = []
@@ -29,7 +30,6 @@ class File:
         self.name = name
         self.size = size
         self.id = str(uuid.uuid4())
-        self.storage = ['ip1', 'ip2', 'ip3']
 
 
 def get_prev(path):
@@ -140,14 +140,32 @@ class ClientListener(Thread):
         self.sock = sock
         self.name = name
         self.path = name
-        directories[''] = Directory('')
 
     def _close(self):
         clients.remove(self.sock)
         self.sock.close()
         print(self.name + ' disconnected')
 
+    def get_storage(self):
+        send_int32(self.sock, len(storage))
+        for i in range(len(storage)):
+            send_str(self.sock, storage[i])
+
     ''' Files Section '''
+
+    def confirm_file_upload(self):
+        try:
+            file_id = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+
+        if file_id not in write_file_map:
+            return
+
+        file, directory = write_file_map[file_id]
+        directory.files[file.name] = file
+        del write_file_map[file_id]
 
     def write_file(self):
         try:
@@ -174,14 +192,11 @@ class ClientListener(Thread):
         if file_name in directory.files:
             file = directory.files[file_name]
         else:
-            file = File(name, file_size)
-            directory.files[file_name] = file
+            file = File(file_name, file_size)
+            write_file_map[file.id] = file, directory
 
         send_int32(self.sock, CODE_OK)
         send_str(self.sock, file.id)
-        send_int32(self.sock, len(file.storage))
-        for i in range(len(file.storage)):
-            send_str(self.sock, file.storage[i])
 
     def read_file(self):
         try:
@@ -207,9 +222,55 @@ class ClientListener(Thread):
 
         send_int32(self.sock, CODE_OK)
         send_str(self.sock, file.id)
-        send_int32(self.sock, len(file.storage))
-        for i in range(len(file.storage)):
-            send_str(self.sock, file.storage[i])
+
+    def copy_file(self):
+        try:
+            full_source_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+
+        try:
+            full_destination_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+
+        path_to_source_file = get_directory_from_full_file_name(full_source_file_name)
+        path_to_destination_file = get_directory_from_full_file_name(full_destination_file_name)
+
+        if path_to_source_file not in directories or path_to_destination_file not in directories:
+            send_int32(sock, CODE_DIRECTORY_NOT_EXIST)
+            return
+
+        source_directory = directories[path_to_source_file]
+        destination_directory = directories[path_to_source_file]
+
+        source_file_name = get_last(full_source_file_name)
+        destination_file_name = get_last(full_destination_file_name)
+
+        if source_file_name not in source_directory.files:
+            send_int32(sock, CODE_FILE_NOT_EXIST)
+
+        source_file = source_directory.files[source_file_name]
+
+        if destination_file_name in destination_directory.files:
+            destination_file = destination_directory.files[destination_file_name]
+        else:
+            destination_file = File(destination_file_name, source_file.size)
+            destination_directory.files[destination_file_name] = destination_file
+
+        storage_index = 0
+        while True:
+            try:
+                send_command_to_storage_server(source_file.storage[storage_index],
+                                               ['c', source_file.id, destination_file.id])
+                break
+            except Exception as e:
+                print(str(e))
+                storage_index += 1
+
+        send_int32(sock, CODE_OK)
 
     def delete_file(self, file_name):
         return delete_file_by_path(self.path + '/' + file_name)
@@ -277,9 +338,11 @@ class ClientListener(Thread):
 
 
 if __name__ == "__main__":
+    directories[''] = Directory('')
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', 8800))
+    sock.bind(('', NAMING_SERVER_PORT))
     sock.listen()
 
     while True:
