@@ -186,6 +186,10 @@ class ClientListener(Thread):
 
 
 def main():
+
+    if not os.path.isdir(STORAGE_SERVER_ROOT_PATH):
+        os.mkdir(STORAGE_SERVER_ROOT_PATH)
+
     next_name = 1
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

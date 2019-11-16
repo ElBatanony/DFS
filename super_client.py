@@ -8,15 +8,7 @@ from status_codes import *
 from receiver import *
 from sender import *
 from storage_server_client import send_command_to_storage_server
-
-path = CLIENT_ROOT_PATH
-
-
-def get_prev(path): return '/'.join(path.split('/')[:-1])
-
-
-def get_last(path): return path.split('/')[-1]
-
+from super_client_directories import *
 
 def open_socket(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,25 +16,7 @@ def open_socket(ip, port):
     sock.connect((ip, port))
     return sock
 
-
-def storage_path():
-    return '/'.join(path.split('/')[1:])
-
-
-def storage_path_plus():
-    sp = storage_path()
-    if sp != '': return sp + '/'
-    return sp
-
-
-def path_plus():
-    if path != '': return path + '/'
-    return path
-
-
 def init_server(sock):
-    global path
-
     # Send initialize command to naming server
     send_int32(sock, CMD_INIT)
     # Receive confirmation that it was completed
@@ -64,7 +38,7 @@ def init_server(sock):
     except OSError as e:
         print("Error: %s - %s." % (e.filename, e.strerror))
 
-    path = CLIENT_ROOT_PATH
+    reset_path()
 
     print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
@@ -142,70 +116,11 @@ def file_info(sock, file_name):
 
 def move_file(sock, file_name, new_path):
     send_int32(sock, CMD_FILE_MOVE)
-    send_str(sock, file_name)
+    file_path = storage_path_plus() + file_name
+    send_str(sock, file_path)
     send_str(sock, new_path)
     ret = receive_str(sock)
     print('mv response: ' + ret)
-
-
-def open_directory(sock, directory_name):
-    global path
-
-    if directory_name == '..':
-        if path == STORAGE_SERVER_ROOT_PATH:
-            return DIR_OPEN_ROOT
-        path = get_prev(path)
-        return DIR_OPEN_PREV
-
-    send_int32(sock, CMD_CHECK_DIR)
-    send_str(sock, storage_path_plus() + directory_name)
-    dir_exists = receive_str(sock)
-
-    if dir_exists != str(CODE_OK):
-        print('Directory does not exist. Error: ' + dir_exists)
-        return DIR_OPEN_NOT_EXIST
-
-    path = path_plus() + directory_name
-
-    if not os.path.isdir(path):
-        os.mkdir(path)
-
-    return DIR_OPEN_OK
-
-
-def read_directory(sock):
-    # make sure that directory exists on machine
-    send_int32(sock, CMD_READ_DIR)
-    send_str(sock, storage_path())
-
-    dir = receive_str(sock)
-    print('ls response: ' + dir)
-
-
-def make_directory(sock, directory_name):
-    # make sure that directory exists on machine
-    send_int32(sock, CMD_MAKE_DIR)
-    directory_path = storage_path_plus() + directory_name
-    send_str(sock, directory_path)
-    ret = receive_str(sock)
-    if not os.path.isdir(path_plus() + directory_name):
-        os.mkdir(path_plus() + directory_name)
-    print('mkdir response: ' + ret)
-
-
-def delete_directory(sock, directory_name, force=False):
-    # make sure that directory exists on machine
-    send_int32(sock, CMD_DELETE_DIR)
-    directory_path = storage_path_plus() + directory_name
-    send_str(sock, directory_path)
-    send_str(sock, force)
-    ret = receive_str(sock)
-    try:
-        shutil.rmtree(path_plus() + directory_name)
-    except OSError as e:
-        print("Error: %s - %s." % (e.filename, e.strerror))
-    print('rmdir response: ' + ret)
-
 
 def main():
     if not os.path.isdir(CLIENT_ROOT_PATH):
@@ -230,8 +145,10 @@ def main():
             write_file(args[0])
         elif cmd == 'r' and len(args) == 1:
             read_file(args[0])
-        elif cmd == 'c' and len(args) == 2:
+        elif cmd == 'cp' and len(args) == 2:
             copy_file(args[0], args[1])
+        elif cmd == 'info' and len(args) == 1:
+            file_info(naming_server_sock, args[0])
         elif cmd == 'cd' and len(args) == 1:
             open_directory(naming_server_sock, args[0])
         elif cmd == 'ls' and len(args) == 0:
