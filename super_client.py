@@ -114,12 +114,20 @@ def file_info(sock, file_name):
     print('info response: ' + ret)
 
 
-def move_file(sock, file_name, new_path):
+def move_file(sock, file_name, new_dir):
     send_int32(sock, CMD_FILE_MOVE)
     file_path = storage_path_plus() + file_name
+    if new_dir == 'root': new_dir = ''
     send_str(sock, file_path)
-    send_str(sock, new_path)
+    send_str(sock, new_dir)
     ret = receive_str(sock)
+    if ret == str(CODE_OK):
+        new_path = CLIENT_ROOT_PATH + '/' + new_dir + '/' + file_name
+        if new_dir == '': new_path = CLIENT_ROOT_PATH + '/' + file_name
+        try:
+            shutil.move(path_plus() + file_name, new_path)
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
     print('mv response: ' + ret)
 
 def main():
@@ -149,6 +157,8 @@ def main():
             copy_file(args[0], args[1])
         elif cmd == 'info' and len(args) == 1:
             file_info(naming_server_sock, args[0])
+        elif cmd == 'mv' and len(args) == 2:
+            move_file(naming_server_sock, args[0], args[1])
         elif cmd == 'cd' and len(args) == 1:
             open_directory(naming_server_sock, args[0])
         elif cmd == 'ls' and len(args) == 0:

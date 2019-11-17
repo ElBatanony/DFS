@@ -44,8 +44,20 @@ def file_info(file_path):
         return ERR_FILE_DIR_NOT_EXIST
 
 
-def move_file(file_path, new_path):
-    return 'NOT IMPLEMENTED YET. WAITING FOR FILES.'
+def move_file(file_path, new_dir):
+    file_dir = get_prev(file_path)
+    file_name = get_last(file_path)
+    if file_dir in directories:
+        if file_name in directories[file_dir].files:
+            if not (new_dir in directories):
+                return ERR_DIR_NOT_EXIST
+            directories[new_dir].files[file_name] = directories[file_dir].files[file_name]
+            del directories[file_dir].files[file_name]
+            return CODE_OK
+        else:
+            return ERR_FILE_NOT_EXIST
+    else:
+        return ERR_FILE_DIR_NOT_EXIST
 
 class ClientListener(Thread):
 
@@ -225,9 +237,9 @@ class ClientListener(Thread):
             send_str(self.sock, ret)
         elif cmd == CMD_FILE_MOVE:
             file_path = receive_str(self.sock)
-            new_path = receive_str(self.sock)
-            ret = move_file(file_path, new_path)
-            return ret
+            new_dir = receive_str(self.sock)
+            ret = move_file(file_path, new_dir)
+            send_str(self.sock, ret)
         elif cmd == CMD_CHECK_DIR:
             directory_path = receive_str(self.sock)
             ret = check_directory(directory_path)
@@ -258,6 +270,7 @@ if __name__ == "__main__":
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', NAMING_SERVER_PORT))
     sock.listen()
+    # sock.settimeout(10) # for debugging
 
     while True:
         #print('naming server listening for client')
