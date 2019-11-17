@@ -1,0 +1,11 @@
+FROM python:3.7.4
+
+WORKDIR /app
+
+EXPOSE 8801
+
+ADD . .
+
+RUN apt-get update && apt-get install -y --no-install-recommends gettext && apt-get clean
+
+CMD python storage_server.py
