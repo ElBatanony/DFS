@@ -6,7 +6,7 @@ EXPOSE 8800
 
 ADD . .
 
-RUN apt-get update && apt-get install -y --no-install-recommends gettext && apt-get clean && pip3 install requests
+RUN apt-get update && apt-get install -y --no-install-recommends gettext && apt-get clean && apt install python3 && pip install requests
 
-CMD python naming_server.py
+CMD python3 naming_server.py
 
