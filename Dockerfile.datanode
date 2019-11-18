@@ -6,6 +6,6 @@ EXPOSE 8801
 
 ADD . .
 
-RUN apt-get update && apt-get install -y --no-install-recommends gettext && apt-get clean && pip3 install requests
+RUN apt-get update && apt-get install -y --no-install-recommends gettext && apt-get clean && apt install python3 && pip3 install requests
 
-CMD python storage_server.py
+CMD python3 storage_server.py
