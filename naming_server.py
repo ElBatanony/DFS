@@ -10,7 +10,7 @@ from storage_server_client import send_command_to_storage_server
 from naming_server_directories import *
 import threading
 import time
-from logs import logger
+from logs import logger, initialize_logs
 
 clients = []
 
@@ -329,6 +329,8 @@ class ClientListener(Thread):
 
 
 if __name__ == "__main__":
+
+    initialize_logs('naming_server_logs.txt')
 
     directories[''] = Directory('')
 

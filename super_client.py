@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 from constants import *
+from logs import initialize_logs, logger
 from naming_server_client import send_command_to_naming_server
 from status_codes import *
 from receiver import *
@@ -25,24 +26,24 @@ def init_server(sock):
     ret = receive_str(sock)
 
     if ret != str(CODE_OK):
-        print("Error with initalizing on server. Error: " + ret)
+        logger.info("Error with initalizing on server. Error: " + ret)
         return
 
     # Delete local dfs and all its content
     try:
         shutil.rmtree(CLIENT_ROOT_PATH)
     except OSError as e:
-        print("Error: %s - %s." % (e.filename, e.strerror))
+        logger.info("Error: %s - %s." % (e.filename, e.strerror))
 
     # Recreate the local dfs directory
     try:
         os.mkdir(CLIENT_ROOT_PATH)
     except OSError as e:
-        print("Error: %s - %s." % (e.filename, e.strerror))
+        logger.info("Error: %s - %s." % (e.filename, e.strerror))
 
     reset_path()
 
-    print('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
+    logger.info('Initalization complete. You have ' + str(INITIAL_SIZE) + ' MBs available.')
 
 
 def create_file(file_name: str):
@@ -50,10 +51,10 @@ def create_file(file_name: str):
     Path(file_path).touch()
 
     if not write_file(file_name):
-        print("error when creating an empty file on server")
+        logger.info("error when creating an empty file on server")
         return False
 
-    print('created empty file')
+    logger.info('created empty file')
     return True
 
 
@@ -62,7 +63,7 @@ def write_file(file_name: str):
 
     file_id = send_command_to_naming_server(CMD_WRITE_FILE, [file_name])
     if file_id is None or file_id is False:
-        print('error: file_id is %s' % file_id)
+        logger.info('error: file_id is %s' % file_id)
         return False
 
     storage_index = 0
@@ -75,7 +76,7 @@ def write_file(file_name: str):
             storage_index = 0
             storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
             if storage is None:
-                print('error: storage server is None')
+                logger.info('error: storage server is None')
                 return False
     return True
 
@@ -85,7 +86,7 @@ def read_file(file_name: str):
 
     file_id = send_command_to_naming_server(CMD_READ_FILE, [file_name])
     if file_id is None:
-        print('error: file_id is None')
+        logger.info('error: file_id is None')
         return
 
     storage_index = 0
@@ -97,27 +98,27 @@ def read_file(file_name: str):
             storage_index = 0
             storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
             if storage is None:
-                print('error: storage server is None')
+                logger.info('error: storage server is None')
 
 
 def copy_file(old_file_name: str, new_file_name: str):
     if not send_command_to_naming_server(CMD_COPY_FILE, [old_file_name, new_file_name]):
-        print('error while copying the file')
+        logger.info('error while copying the file')
         return
     shutil.copy(os.path.join(CLIENT_ROOT_PATH, old_file_name), os.path.join(CLIENT_ROOT_PATH, new_file_name))
 
 
 def delete_file(file_name: str):
     if not send_command_to_naming_server(CMD_DELETE_FILE, [file_name]):
-        print('error while removing a file')
-    print('file removed')
+        logger.info('error while removing a file')
+    logger.info('file removed')
 
 
 def file_info(sock, file_name):
     send_int32(sock, CMD_FILE_INFO)
     send_str(sock, file_name)
     ret = receive_str(sock)
-    print('info response: ' + ret)
+    logger.info('info response: ' + ret)
 
 
 def move_file(sock, file_name, new_dir):
@@ -133,8 +134,8 @@ def move_file(sock, file_name, new_dir):
         try:
             shutil.move(path_plus() + file_name, new_path)
         except OSError as e:
-            print("Error: %s - %s." % (e.filename, e.strerror))
-    print('mv response: ' + ret)
+            logger.info("Error: %s - %s." % (e.filename, e.strerror))
+    logger.info('mv response: ' + ret)
 
 
 def main():
@@ -145,7 +146,7 @@ def main():
     while True:
 
         if cmd == 'exit':
-            print('Exiting')
+            logger.info('Exiting')
             break
 
         naming_server_sock = open_socket(
@@ -181,11 +182,12 @@ def main():
         elif cmd == 'rmdir' and len(args) == 2:
             delete_directory(naming_server_sock, args[0], args[1])
         else:
-            print('Command-arguments combination unrecognized')
+            logger.info('Command-arguments combination unrecognized')
 
         naming_server_sock.send(int32_to_web(CMD_CLOSE_SOCK))
         naming_server_sock.close()
 
 
 if __name__ == "__main__":
+    initialize_logs('client_logs.txt')
     main()

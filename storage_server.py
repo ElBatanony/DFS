@@ -7,6 +7,7 @@ import time
 import stat
 
 from constants import *
+from logs import initialize_logs, logger
 from naming_server_client import send_command_to_naming_server
 from receiver import *
 from sender import *
@@ -25,24 +26,24 @@ class ClientListener(Thread):
 
     def _close(self):
         self.sock.close()
-        print(self.name + ' disconnected')
+        logger.info(self.name + ' disconnected')
 
     def replicate_file(self):
         try:
             source_address = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
         try:
             file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
         send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
         send_int32(self.sock, CODE_OK)
-    
+
     def ping_as_naming(self):
         send_int32(self.sock, CODE_OK)
 
@@ -50,31 +51,31 @@ class ClientListener(Thread):
         try:
             file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
 
         if os.path.exists(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
             os.remove(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name))
             self.sock.send(int32_to_web(CODE_OK))
-            print("file {0} removed.".format(file_name))
+            logger.info("file {0} removed.".format(file_name))
         else:
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
-            print('error: no such file')
+            logger.info('error: no such file')
             return
 
     def copy_file(self):
         try:
             old_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
 
         try:
             new_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
 
@@ -89,13 +90,13 @@ class ClientListener(Thread):
         try:
             file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
         try:
             receive_file(self.sock, file_name, STORAGE_SERVER_ROOT_PATH)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
         send_int32(self.sock, CODE_OK)
@@ -105,14 +106,14 @@ class ClientListener(Thread):
         try:
             file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
 
         if not os.path.isfile(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
-            print('error: file does not exist')
+            logger.info('error: file does not exist')
             return
         else:
             self.sock.send(int32_to_web(CODE_OK))
@@ -122,7 +123,7 @@ class ClientListener(Thread):
     def run(self):
         command_code = web_to_int(self.sock.recv(32))
 
-        print('Received ' + str(command_code) + ' from ' + self.name)
+        logger.info('Received ' + str(command_code) + ' from ' + self.name)
 
         if command_code == CMD_WRITE_FILE:
             self.write_file()
@@ -137,7 +138,7 @@ class ClientListener(Thread):
         elif command_code == CMD_PING_AS_NAMING:
             self.ping_as_naming()
         else:
-            print('error reading command code %d' % command_code)
+            logger.info('error reading command code %d' % command_code)
         self.sock.close()
 
 
@@ -163,4 +164,5 @@ def main():
 
 
 if __name__ == "__main__":
+    initialize_logs('storage_server_logs.txt')
     main()

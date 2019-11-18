@@ -1,9 +1,11 @@
 import socket
 
 from constants import *
+from logs import logger
 from receiver import *
 from sender import *
 from status_codes import *
+
 
 def ping_as_naming(sock):
     send_int32(sock, CMD_PING_AS_NAMING)
@@ -12,13 +14,14 @@ def ping_as_naming(sock):
         return False
     return True
 
+
 def replicate_file(sock: socket.socket, address: str, file_name: str):
     send_int32(sock, CMD_REPLICATE_FILE)
     send_str(sock, address)
     send_str(sock, file_name)
     code = receive_int32(sock)
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
     return True
 
@@ -28,10 +31,10 @@ def get_file_info(sock: socket.socket, file_name):
     send_str(sock, file_name)
     code = receive_int32(sock)
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
     file_info = receive_str(sock)
-    print(file_info)
+    logger.info(file_info)
     return True
 
 
@@ -40,9 +43,9 @@ def delete_file(sock, file_name):
     send_str(sock, file_name)
     code = receive_int32(sock)
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
-    print('file removed')
+    logger.info('file removed')
     return True
 
 
@@ -52,9 +55,9 @@ def copy_file(sock, old_file_name, new_file_name):
     send_str(sock, new_file_name)
     code = receive_int32(sock)
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
-    print('file copied')
+    logger.info('file copied')
     return True
 
 
@@ -63,12 +66,12 @@ def read_file(sock: socket.socket, path_to_source_file: str, path_to_destination
     send_str(sock, path_to_source_file)
     code = receive_int32(sock)
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
     try:
         receive_file(sock, path_to_destination_file, CLIENT_ROOT_PATH)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     return True
 
@@ -83,10 +86,10 @@ def write_file(sock, path_to_source_file: str, path_to_destination_file: str, ro
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     if code != CODE_OK:
-        print('error with code %d' % str(code))
+        logger.info('error with code %d' % str(code))
         return False
     return True
 
@@ -100,7 +103,7 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
     try:
         sock.connect((host, port))
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
 
     result = None
@@ -120,7 +123,7 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
     elif cmd == CMD_PING_AS_NAMING and len(args) == 0:
         result = ping_as_naming(sock)
     else:
-        print('unrecognized command')
+        logger.info('unrecognized command')
 
     sock.close()
     return result
@@ -147,7 +150,7 @@ def main():
         try:
             send_command_to_storage_server('localhost', get_command_from_str(args[0]), args[1:])
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
 
 
 if __name__ == "__main__":

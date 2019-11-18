@@ -1,22 +1,28 @@
 import os
 import shutil
 from constants import *
+from logs import logger
 from status_codes import *
 from sender import *
 from receiver import *
 
 path = CLIENT_ROOT_PATH
 
+
 def reset_path():
     global path
     path = CLIENT_ROOT_PATH
 
+
 def get_prev(path): return '/'.join(path.split('/')[:-1])
+
 
 def get_last(path): return path.split('/')[-1]
 
+
 def storage_path():
     return '/'.join(path.split('/')[1:])
+
 
 def storage_path_plus():
     sp = storage_path()
@@ -24,10 +30,12 @@ def storage_path_plus():
         return sp + '/'
     return sp
 
+
 def path_plus():
     if path != '':
         return path + '/'
     return path
+
 
 def open_directory(sock, directory_name):
     global path
@@ -43,7 +51,7 @@ def open_directory(sock, directory_name):
     dir_exists = receive_str(sock)
 
     if dir_exists != str(CODE_OK):
-        print('Directory does not exist. Error: ' + dir_exists)
+        logger.info('Directory does not exist. Error: ' + dir_exists)
         return DIR_OPEN_NOT_EXIST
 
     path = path_plus() + directory_name
@@ -60,13 +68,13 @@ def read_directory(sock):
     send_str(sock, storage_path())
 
     dir = receive_str(sock)
-    
+
     for x in dir.split(' '):
         if len(x) > 0 and x[-1] == '/':
             if not os.path.isdir(path_plus() + x[:-1]):
                 os.mkdir(path_plus() + x[:-1])
 
-    print('ls response: ' + dir)
+    logger.info('ls response: ' + dir)
 
 
 def make_directory(sock, directory_name):
@@ -77,7 +85,7 @@ def make_directory(sock, directory_name):
     ret = receive_str(sock)
     if not os.path.isdir(path_plus() + directory_name):
         os.mkdir(path_plus() + directory_name)
-    print('mkdir response: ' + ret)
+    logger.info('mkdir response: ' + ret)
 
 
 def delete_directory(sock, directory_name, force=False):
@@ -90,5 +98,5 @@ def delete_directory(sock, directory_name, force=False):
     try:
         shutil.rmtree(path_plus() + directory_name)
     except OSError as e:
-        print("Error: %s - %s." % (e.filename, e.strerror))
-    print('rmdir response: ' + ret)
+        logger.info("Error: %s - %s." % (e.filename, e.strerror))
+    logger.info('rmdir response: ' + ret)
