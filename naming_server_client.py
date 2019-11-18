@@ -152,7 +152,7 @@ def move_file(sock, file_name, new_path):
 
 
 def send_command_to_naming_server(cmd: int, args):
-    host = 'localhost'
+    host = NAMING_SERVER_IP
     port = NAMING_SERVER_PORT
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
