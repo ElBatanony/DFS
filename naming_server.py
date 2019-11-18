@@ -1,4 +1,5 @@
 import socket
+import sys
 import uuid
 from threading import Thread
 from status_codes import *
@@ -9,6 +10,7 @@ from storage_server_client import send_command_to_storage_server
 from naming_server_directories import *
 import threading
 import time
+from logs import logger
 
 clients = []
 
@@ -23,14 +25,16 @@ class File:
         self.size = size
         self.id = str(uuid.uuid4())
 
+
 def ping_storages():
     while True:
-        print('pinging storages')
+        logger.info('pinging storages')
         for st in storage:
-            if not send_command_to_storage_server( st , CMD_PING_AS_NAMING, [] ) :
-                print('lost ' + st)
+            if not send_command_to_storage_server(st, CMD_PING_AS_NAMING, []):
+                logger.info('lost ' + st)
                 storage.remove(st)
         time.sleep(PING_SERVERS_SECONDS)
+
 
 def get_directory_from_full_file_name(file_name):
     if len(file_name.split('/')) == 1:
@@ -86,7 +90,7 @@ class ClientListener(Thread):
     def _close(self):
         clients.remove(self.sock)
         self.sock.close()
-        # print(self.name + ' disconnected')
+        # logger.info(self.name + ' disconnected')
 
     def get_storage(self):
         send_int32(self.sock, len(storage))
@@ -97,11 +101,11 @@ class ClientListener(Thread):
         try:
             code = receive_int32(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         if code != CODE_OK:
-            print('error with code %d' % code)
+            logger.info('error with code %d' % code)
             return
 
         send_int32(self.sock, CODE_OK)
@@ -111,7 +115,7 @@ class ClientListener(Thread):
                 send_command_to_storage_server(self.address, CMD_REPLICATE_FILE, [storage[0], f.id])
 
         storage.append(self.address)
-        print('%s storage connected' % self.address)
+        logger.info('%s storage connected' % self.address)
 
     ''' Files Section '''
 
@@ -119,7 +123,7 @@ class ClientListener(Thread):
         try:
             file_id = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         if file_id not in write_file_map:
@@ -128,7 +132,7 @@ class ClientListener(Thread):
         file, directory = write_file_map[file_id]
         directory.files[file.name] = file
         del write_file_map[file_id]
-        print('file "%s" confirmed' % file.name)
+        logger.info('file "%s" confirmed' % file.name)
 
         for s in storage:
             if s != self.address:
@@ -140,13 +144,13 @@ class ClientListener(Thread):
         try:
             full_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         try:
             file_size = receive_int64(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         path_to_file = get_directory_from_full_file_name(full_file_name)
@@ -171,7 +175,7 @@ class ClientListener(Thread):
         try:
             full_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         path_to_file = get_directory_from_full_file_name(full_file_name)
@@ -196,13 +200,13 @@ class ClientListener(Thread):
         try:
             full_source_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         try:
             full_destination_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
 
         path_to_source_file = get_directory_from_full_file_name(full_source_file_name)
@@ -236,7 +240,7 @@ class ClientListener(Thread):
                                                [source_file.id, destination_file.id])
                 break
             except Exception as e:
-                print(str(e))
+                logger.info(str(e))
                 storage_index += 1
                 if storage_index >= len(storage):
                     storage_index = 0
@@ -247,17 +251,17 @@ class ClientListener(Thread):
         try:
             full_file_name = receive_str(self.sock)
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return
         path_to_file = get_directory_from_full_file_name(full_file_name)
         if path_to_file not in directories:
-            print('directory %s does not exist' % path_to_file)
+            logger.info('directory %s does not exist' % path_to_file)
             send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
         dir = directories[path_to_file]
         file_name = get_last(full_file_name)
         if file_name not in dir.files:
-            print('file %s does not exist' % file_name)
+            logger.info('file %s does not exist' % file_name)
             send_int32(self.sock, CODE_FILE_NOT_EXIST)
             return
         file = dir.files[file_name]
@@ -269,11 +273,11 @@ class ClientListener(Thread):
         try:
             cmd = web_to_int(self.sock.recv(32))
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             self._close()
             return
 
-        print("Received " + str(cmd) + " from " + self.name)
+        logger.info("Received " + str(cmd) + " from " + self.name)
 
         if cmd == CMD_INIT:
             ret = initialize()
@@ -319,12 +323,13 @@ class ClientListener(Thread):
             ret = delete_directory(directory_path, force)
             send_str(self.sock, ret)
         else:
-            print('error reading command code')
+            logger.info('error reading command code')
 
         self._close()
 
 
 if __name__ == "__main__":
+
     directories[''] = Directory('')
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -336,11 +341,10 @@ if __name__ == "__main__":
     threading.Thread(target=ping_storages).start()
 
     while True:
-        # print('naming server listening for client')
-
+        logger.info('naming server listening for client')
         con, address = sock.accept()
         clients.append(con)
         name = 'da_client'
-        # print(name + ' connected from ' + str(address[0]))
+        logger.info(name + ' connected from ' + str(address[0]))
         clientListener = ClientListener(name, con, address[0])
         clientListener.start()

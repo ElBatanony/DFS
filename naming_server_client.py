@@ -34,6 +34,7 @@ def ping_as_storage(sock):
     if code != CODE_OK:
         print('error with code %d' % code)
         return False
+    print('ping is successful')
     return True
 
 
