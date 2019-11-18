@@ -122,7 +122,7 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
     elif cmd == CMD_PING_AS_NAMING and len(args) == 0:
         result = ping_as_naming(sock)
     else:
-        logger.info('unrecognized command')
+        logger.info('unrecognized command %d' % cmd)
 
     sock.close()
     return result

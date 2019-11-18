@@ -187,8 +187,6 @@ def main():
             delete_directory(naming_server_sock, args[0], args[1])
         else:
             logger.info('Command-arguments combination unrecognized')
-
-        naming_server_sock.send(int32_to_web(CMD_CLOSE_SOCK))
         naming_server_sock.close()
 
 
