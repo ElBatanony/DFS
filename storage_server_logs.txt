@@ -1,2 +1,8 @@
 ping is successful
 ping is successful
+Starting new HTTPS connection (1): api.ipify.org:443
+https://api.ipify.org:443 "GET / HTTP/1.1" 200 15
+ping is successful
+Starting new HTTPS connection (1): api.ipify.org:443
+https://api.ipify.org:443 "GET / HTTP/1.1" 200 15
+ping is successful

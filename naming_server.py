@@ -80,12 +80,11 @@ def move_file(file_path, new_dir):
 
 class ClientListener(Thread):
 
-    def __init__(self, name: str, sock: socket.socket, address):
+    def __init__(self, name: str, sock: socket.socket):
         super().__init__(daemon=True)
         self.sock = sock
         self.name = name
         self.path = name
-        self.address = address
 
     def _close(self):
         clients.remove(self.sock)
@@ -99,27 +98,29 @@ class ClientListener(Thread):
 
     def ping_as_storage(self):
         try:
-            code = receive_int32(self.sock)
+            ip = receive_str(self.sock)
         except Exception as e:
             logger.info(str(e))
             return
 
-        if code != CODE_OK:
-            logger.info('error with code %d' % code)
-            return
-
         send_int32(self.sock, CODE_OK)
 
-        storage.append(self.address)
-        logger.info('%s storage connected' % self.address)
+        storage.append(ip)
+        logger.info('%s storage connected' % ip)
 
         for dir in directories.values():
             for f in dir.files.values():
-                send_command_to_storage_server(self.address, CMD_REPLICATE_FILE, [storage[0], f.id])
+                send_command_to_storage_server(ip, CMD_REPLICATE_FILE, [storage[0], f.id])
 
     ''' Files Section '''
 
     def confirm_file_upload(self):
+        try:
+            ip = receive_str(self.sock)
+        except Exception as e:
+            logger.info(str(e))
+            return
+
         try:
             file_id = receive_str(self.sock)
         except Exception as e:
@@ -135,8 +136,8 @@ class ClientListener(Thread):
         logger.info('file "%s" confirmed' % file.name)
 
         for s in storage:
-            if s != self.address:
-                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [self.address, file.id])
+            if s != ip:
+                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [ip, file.id])
 
         send_int32(self.sock, CODE_OK)
 
@@ -213,7 +214,7 @@ class ClientListener(Thread):
         path_to_destination_file = get_directory_from_full_file_name(full_destination_file_name)
 
         if path_to_source_file not in directories or path_to_destination_file not in directories:
-            send_int32(sock, CODE_DIRECTORY_NOT_EXIST)
+            send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
 
         source_directory = directories[path_to_source_file]
@@ -223,7 +224,7 @@ class ClientListener(Thread):
         destination_file_name = get_last(full_destination_file_name)
 
         if source_file_name not in source_directory.files:
-            send_int32(sock, CODE_FILE_NOT_EXIST)
+            send_int32(self.sock, CODE_FILE_NOT_EXIST)
 
         source_file = source_directory.files[source_file_name]
 
@@ -344,7 +345,7 @@ def main():
         clients.append(con)
         name = 'da_client'
         logger.info(name + ' connected from ' + str(address[0]))
-        clientListener = ClientListener(name, con, address[0])
+        clientListener = ClientListener(name, con)
         clientListener.start()
 
 

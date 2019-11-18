@@ -4,6 +4,7 @@ from constants import *
 from status_codes import *
 from receiver import *
 from sender import *
+from requests import get
 
 
 def delete_file(sock: socket.socket, file_name: str):
@@ -23,9 +24,14 @@ def delete_file(sock: socket.socket, file_name: str):
     return True
 
 
+def get_ip():
+    return get('https://api.ipify.org').text
+
+
 def ping_as_storage(sock):
     send_int32(sock, CMD_PING_AS_STORAGE)
-    send_int32(sock, CODE_OK)
+    ip = get_ip()
+    send_str(sock, ip)
     try:
         code = receive_int32(sock)
     except Exception as e:
@@ -40,6 +46,8 @@ def ping_as_storage(sock):
 
 def confirm_file_upload(sock, file_id):
     send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
+    ip = get_ip()
+    send_str(sock, ip)
     send_str(sock, file_id)
     try:
         code = receive_int32(sock)
