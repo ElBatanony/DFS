@@ -46,16 +46,15 @@ def init_server(sock):
 
 
 def create_file(file_name: str):
-    file_path = path + '/' + file_name
-
+    file_path = os.path.join(CLIENT_ROOT_PATH, file_name)
     Path(file_path).touch()
 
-    ret = write_file(file_name)
-    if ret != CODE_OK:
-        print("Error with creating an empty file on server. Error: " + ret)
+    if not write_file(file_name):
+        print("error when creating an empty file on server")
+        return False
 
-    print('Created empty file')
-    return ret
+    print('created empty file')
+    return True
 
 
 def write_file(file_name: str):
@@ -64,11 +63,12 @@ def write_file(file_name: str):
     file_id = send_command_to_naming_server(CMD_WRITE_FILE, [file_name])
     if file_id is None or file_id is False:
         print('error: file_id is %s' % file_id)
-        return
+        return False
 
     storage_index = 0
     while True:
-        if send_command_to_storage_server(storage[storage_index], CMD_WRITE_FILE, [file_name, file_id]):
+        if send_command_to_storage_server(storage[storage_index], CMD_WRITE_FILE,
+                                          [file_name, file_id, CLIENT_ROOT_PATH]):
             break
         storage_index += 1
         if storage_index == len(storage):
@@ -76,6 +76,8 @@ def write_file(file_name: str):
             storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
             if storage is None:
                 print('error: storage server is None')
+                return False
+    return True
 
 
 def read_file(file_name: str):
@@ -152,6 +154,8 @@ def main():
 
         if cmd == 'init' and len(args) == 0:
             init_server(naming_server_sock)
+        elif cmd == 'touch' and len(args) == 1:
+            create_file(args[0])
         elif cmd == 'w' and len(args) == 1:
             write_file(args[0])
         elif cmd == 'r' and len(args) == 1:

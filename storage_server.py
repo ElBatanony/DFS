@@ -37,58 +37,11 @@ class ClientListener(Thread):
             print(str(e))
             self._close()
             return
-        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name])
+        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
         send_int32(self.sock, CODE_OK)
     
     def ping_as_naming(self):
         send_int32(self.sock, CODE_OK)
-
-    def get_file_info(self):
-        try:
-            file_name = receive_str(self.sock)
-        except Exception as e:
-            print(str(e))
-            self._close()
-            return
-
-        if os.path.exists(file_name):
-            self.sock.send(int32_to_web(CODE_OK))
-
-            info = os.stat(file_name)
-
-            result = ''
-
-            mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime = info
-            result += "\nFile '{0}' info:\n".format(file_name)
-            result += "Size: {0} bytes.\n".format(size)
-            result += "Last accessed: {0}.\n".format(time.asctime(time.localtime(atime)))
-            result += "Last modified: {0}.\n".format(time.asctime(time.localtime(mtime)))
-            result += "File info last changed: {0}.\n".format(time.asctime(time.localtime(ctime)))
-            result += "Protection bits: {0}.\n".format(oct(stat.S_IMODE(mode))[2:])
-            result += "Hardlinks number: {0}.\n".format(nlink)
-
-            send_str(self.sock, result)
-        else:
-            self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
-            print('error: no such file')
-            return
-
-    def create_empty_file(self):
-        try:
-            file_name = receive_str(self.sock)
-        except Exception as e:
-            print(str(e))
-            self._close()
-            return
-
-        if os.path.exists(file_name):
-            self.sock.send(int32_to_web(CODE_FILE_ALREADY_EXIST))
-            print('error: file {0} already exists'.format(file_name))
-            return
-        else:
-            open(file_name, 'a').close()
-            self.sock.send(int32_to_web(CODE_OK))
-            print("created {0} empty file".format(file_name))
 
     def delete_file(self):
         try:
@@ -98,7 +51,7 @@ class ClientListener(Thread):
             self._close()
             return
 
-        if os.path.exists(file_name):
+        if os.path.exists(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
             os.remove(file_name)
             self.sock.send(int32_to_web(CODE_OK))
             print("file {0} removed.".format(file_name))
@@ -176,10 +129,6 @@ class ClientListener(Thread):
             self.copy_file()
         elif command_code == CMD_DELETE_FILE:
             self.delete_file()
-        elif command_code == CMD_CREATE_EMPTY_FILE:
-            self.create_empty_file()
-        elif command_code == CMD_FILE_INFO:
-            self.get_file_info()
         elif command_code == CMD_REPLICATE_FILE:
             self.replicate_file()
         elif command_code == CMD_PING_AS_NAMING:
