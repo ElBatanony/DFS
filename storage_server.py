@@ -39,6 +39,9 @@ class ClientListener(Thread):
             return
         send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name])
         send_int32(self.sock, CODE_OK)
+    
+    def ping_as_naming(self):
+        send_int32(self.sock, CODE_OK)
 
     def get_file_info(self):
         try:
@@ -163,6 +166,8 @@ class ClientListener(Thread):
     def run(self):
         command_code = web_to_int(self.sock.recv(32))
 
+        print('Received ' + str(command_code) + ' from ' + self.name)
+
         if command_code == CMD_WRITE_FILE:
             self.write_file()
         elif command_code == CMD_READ_FILE:
@@ -177,6 +182,8 @@ class ClientListener(Thread):
             self.get_file_info()
         elif command_code == CMD_REPLICATE_FILE:
             self.replicate_file()
+        elif command_code == CMD_PING_AS_NAMING:
+            self.ping_as_naming()
         else:
             print('error reading command code %d' % command_code)
         self.sock.close()
