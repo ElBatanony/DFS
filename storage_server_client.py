@@ -5,6 +5,12 @@ from receiver import *
 from sender import *
 from status_codes import *
 
+def ping_as_naming(sock):
+    send_int32(sock, CMD_PING_AS_NAMING)
+    ret = receive_int32(sock)
+    if ret != CODE_OK:
+        return False
+    return True
 
 def replicate_file(sock: socket.socket, address: str, file_name: str):
     send_int32(sock, CMD_REPLICATE_FILE)
@@ -90,7 +96,12 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.connect((host, port))
+
+    try:
+        sock.connect((host, port))
+    except Exception as e:
+        print(str(e))
+        return False
 
     result = None
 
@@ -106,6 +117,8 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
         result = get_file_info(sock, args[0])
     elif cmd == CMD_REPLICATE_FILE and len(args) == 2:
         result = replicate_file(sock, args[0], args[1])
+    elif cmd == CMD_PING_AS_NAMING and len(args) == 0:
+        result = ping_as_naming(sock)
     else:
         print('unrecognized command')
 

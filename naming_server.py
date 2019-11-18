@@ -7,6 +7,8 @@ from sender import *
 from constants import *
 from storage_server_client import send_command_to_storage_server
 from naming_server_directories import *
+import threading
+import time
 
 clients = []
 
@@ -21,6 +23,14 @@ class File:
         self.size = size
         self.id = str(uuid.uuid4())
 
+def ping_storages():
+    while True:
+        print('pinging storages')
+        for st in storage:
+            if not send_command_to_storage_server( st , CMD_PING_AS_NAMING, [] ) :
+                print('lost ' + st)
+                storage.remove(st)
+        time.sleep(PING_SERVERS_SECONDS)
 
 def get_directory_from_full_file_name(file_name):
     if len(file_name.split('/')) == 1:
@@ -322,6 +332,8 @@ if __name__ == "__main__":
     sock.bind(('', NAMING_SERVER_PORT))
     sock.listen()
     # sock.settimeout(10) # for debugging
+
+    threading.Thread(target=ping_storages).start()
 
     while True:
         # print('naming server listening for client')
