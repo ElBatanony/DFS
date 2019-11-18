@@ -6,6 +6,20 @@ from receiver import *
 from sender import *
 
 
+def ping_as_storage(sock):
+    send_int32(sock, CMD_PING_AS_STORAGE)
+    send_int32(sock, CODE_OK)
+    try:
+        code = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return False
+    if code != CODE_OK:
+        print('error with code %d' % code)
+        return False
+    return True
+
+
 def confirm_file_upload(sock, file_id):
     send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
     send_str(sock, file_id)
@@ -184,6 +198,8 @@ def send_command_to_naming_server(cmd: int, args):
         result = file_info(sock, args[0])
     elif cmd == CMD_FILE_MOVE and len(args) == 2:
         result = move_file(sock, args[0], args[1])
+    elif cmd == CMD_PING_AS_STORAGE and len(args) == 0:
+        result = ping_as_storage(sock)
     else:
         print('Command-arguments combination unrecognized')
 

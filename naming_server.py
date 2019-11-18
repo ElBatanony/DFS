@@ -83,6 +83,26 @@ class ClientListener(Thread):
         for i in range(len(storage)):
             send_str(self.sock, storage[i])
 
+    def ping_as_storage(self):
+        try:
+            code = receive_int32(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+
+        if code != CODE_OK:
+            print('error with code %d' % code)
+            return
+
+        send_int32(self.sock, CODE_OK)
+
+        for dir in directories.values():
+            for f in dir.files.values():
+                send_command_to_storage_server(self.address, CMD_REPLICATE_FILE, [storage[0], f.id])
+
+        storage.append(self.address)
+        print('%s storage connected' % self.address)
+
     ''' Files Section '''
 
     def confirm_file_upload(self):
@@ -226,6 +246,8 @@ class ClientListener(Thread):
         if cmd == CMD_INIT:
             ret = initialize()
             send_str(self.sock, ret)
+        elif cmd == CMD_PING_AS_STORAGE:
+            self.ping_as_storage()
         elif cmd == CMD_GET_STORAGE:
             self.get_storage()
         elif cmd == CMD_WRITE_FILE:
