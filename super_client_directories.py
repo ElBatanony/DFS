@@ -60,6 +60,12 @@ def read_directory(sock):
     send_str(sock, storage_path())
 
     dir = receive_str(sock)
+    
+    for x in dir.split(' '):
+        if len(x) > 0 and x[-1] == '/':
+            if not os.path.isdir(path_plus() + x[:-1]):
+                os.mkdir(path_plus() + x[:-1])
+
     print('ls response: ' + dir)
 
 
