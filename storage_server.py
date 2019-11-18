@@ -21,7 +21,6 @@ class ClientListener(Thread):
         self.name = name
 
     def _close(self):
-        clients.remove(self.sock)
         self.sock.close()
         print(self.name + ' disconnected')
 

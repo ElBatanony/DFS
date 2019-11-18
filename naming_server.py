@@ -10,7 +10,7 @@ from naming_server_directories import *
 
 clients = []
 
-storage = ['127.0.0.1']
+storage = []
 
 write_file_map = {}
 
