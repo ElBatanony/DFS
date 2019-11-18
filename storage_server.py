@@ -157,4 +157,7 @@ def main():
 
 if __name__ == "__main__":
     initialize_logs('storage_server_logs.txt')
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.info(str(e))

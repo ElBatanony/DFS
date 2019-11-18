@@ -110,12 +110,12 @@ class ClientListener(Thread):
 
         send_int32(self.sock, CODE_OK)
 
+        storage.append(self.address)
+        logger.info('%s storage connected' % self.address)
+
         for dir in directories.values():
             for f in dir.files.values():
                 send_command_to_storage_server(self.address, CMD_REPLICATE_FILE, [storage[0], f.id])
-
-        storage.append(self.address)
-        logger.info('%s storage connected' % self.address)
 
     ''' Files Section '''
 
@@ -328,17 +328,13 @@ class ClientListener(Thread):
         self._close()
 
 
-if __name__ == "__main__":
-
-    initialize_logs('naming_server_logs.txt')
-
+def main():
     directories[''] = Directory('')
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', NAMING_SERVER_PORT))
     sock.listen()
-    # sock.settimeout(10) # for debugging
 
     threading.Thread(target=ping_storages).start()
 
@@ -350,3 +346,11 @@ if __name__ == "__main__":
         logger.info(name + ' connected from ' + str(address[0]))
         clientListener = ClientListener(name, con, address[0])
         clientListener.start()
+
+
+if __name__ == "__main__":
+    initialize_logs('naming_server_logs.txt')
+    try:
+        main()
+    except Exception as e:
+        logger.info(str(e))

@@ -1,2 +1,4 @@
 pinging storages
 naming server listening for client
+pinging storages
+naming server listening for client
