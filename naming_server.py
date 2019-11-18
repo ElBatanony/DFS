@@ -14,21 +14,25 @@ storage = ['127.0.0.1']
 
 write_file_map = {}
 
+
 class File:
     def __init__(self, name: str, size: int):
         self.name = name
         self.size = size
         self.id = str(uuid.uuid4())
 
+
 def get_directory_from_full_file_name(file_name):
     if len(file_name.split('/')) == 1:
         return ''
     return get_prev(file_name)
 
+
 def initialize():
     delete_directory('', True)
     reset_directories()
     return CODE_OK
+
 
 def file_info(file_path):
     file_dir = get_prev(file_path)
@@ -59,6 +63,7 @@ def move_file(file_path, new_dir):
     else:
         return ERR_FILE_DIR_NOT_EXIST
 
+
 class ClientListener(Thread):
 
     def __init__(self, name: str, sock: socket.socket, address):
@@ -71,7 +76,7 @@ class ClientListener(Thread):
     def _close(self):
         clients.remove(self.sock)
         self.sock.close()
-        #print(self.name + ' disconnected')
+        # print(self.name + ' disconnected')
 
     def get_storage(self):
         send_int32(self.sock, len(storage))
@@ -273,11 +278,11 @@ if __name__ == "__main__":
     # sock.settimeout(10) # for debugging
 
     while True:
-        #print('naming server listening for client')
+        # print('naming server listening for client')
 
         con, address = sock.accept()
         clients.append(con)
         name = 'da_client'
-        #print(name + ' connected from ' + str(address[0]))
+        # print(name + ' connected from ' + str(address[0]))
         clientListener = ClientListener(name, con, address[0])
         clientListener.start()

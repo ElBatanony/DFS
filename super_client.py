@@ -10,11 +10,13 @@ from sender import *
 from storage_server_client import send_command_to_storage_server
 from super_client_directories import *
 
+
 def open_socket(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, port))
     return sock
+
 
 def init_server(sock):
     # Send initialize command to naming server
@@ -60,8 +62,8 @@ def write_file(file_name: str):
     storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
 
     file_id = send_command_to_naming_server(CMD_WRITE_FILE, [file_name])
-    if file_id is None:
-        print('error: file_id is None')
+    if file_id is None or file_id is False:
+        print('error: file_id is %s' % file_id)
         return
 
     storage_index = 0
@@ -129,6 +131,7 @@ def move_file(sock, file_name, new_dir):
         except OSError as e:
             print("Error: %s - %s." % (e.filename, e.strerror))
     print('mv response: ' + ret)
+
 
 def main():
     if not os.path.isdir(CLIENT_ROOT_PATH):
