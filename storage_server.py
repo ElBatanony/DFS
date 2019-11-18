@@ -1,10 +1,6 @@
-
-import os
 import shutil
 import socket
 from threading import Thread
-import time
-import stat
 
 from constants import *
 from logs import initialize_logs, logger
@@ -14,8 +10,6 @@ from sender import *
 from status_codes import *
 from storage_server_client import send_command_to_storage_server
 from web_format_converter import *
-
-clients = []
 
 
 class ClientListener(Thread):
@@ -143,11 +137,10 @@ class ClientListener(Thread):
 
 
 def main():
-
     if not os.path.isdir(STORAGE_SERVER_ROOT_PATH):
         os.mkdir(STORAGE_SERVER_ROOT_PATH)
 
-    next_name = 1
+    send_command_to_naming_server(CMD_PING_AS_STORAGE, [])
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -156,13 +149,12 @@ def main():
 
     while True:
         connection, address = sock.accept()
-        clients.append(connection)
-        name = 'u' + str(next_name)
-        next_name += 1
-        print(str(address) + ' connected as ' + name)
-        ClientListener(name, connection).start()
+        ClientListener(str(address[0]), connection).start()
 
 
 if __name__ == "__main__":
     initialize_logs('storage_server_logs.txt')
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.info(str(e))

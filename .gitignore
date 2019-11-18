@@ -134,3 +134,7 @@ local_dfs/
 storage_server/
 storage_server_files/
 t.txt
+client_logs.txt
+naming_server_logs.txt
+storage_server_logs.txt
+naming_server_logs.txt

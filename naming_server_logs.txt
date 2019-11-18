@@ -1,2 +1,67 @@
 pinging storages
 naming server listening for client
+pinging storages
+naming server listening for client
+pinging storages
+naming server listening for client
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 17 from da_client
+188.130.155.163 storage connected
+pinging storages
+da_client connected from 127.0.0.1
+naming server listening for client
+[WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера
+lost 188.130.155.163
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 14 from da_client
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 1 from da_client
+Received 0 from da_client
+error reading command code
+pinging storages
+pinging storages
+pinging storages
+naming server listening for client
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 17 from da_client
+188.130.155.163 storage connected
+pinging storages
+da_client connected from 127.0.0.1
+naming server listening for client
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 14 from da_client
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 0 from da_client
+Received 13 from da_client
+error reading command code
+error reading command code
+da_client connected from 127.0.0.1
+naming server listening for client
+[WinError 10060] Попытка установить соединение была безуспешной, т.к. от другого компьютера за требуемое время не получен нужный отклик, или было разорвано уже установленное соединение из-за неверного отклика уже подключенного компьютера
+lost 188.130.155.163
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 14 from da_client
+Received 13 from da_client
+error reading command code
+da_client connected from 127.0.0.1
+naming server listening for client
+pinging storages
+da_client connected from 127.0.0.1
+naming server listening for client
+Received 14 from da_client
+Received 13 from da_client
+error reading command code
+da_client connected from 127.0.0.1
+naming server listening for client
+pinging storages
+[WinError 10054] Удаленный хост принудительно разорвал существующее подключение
+pinging storages
+pinging storages
+pinging storages

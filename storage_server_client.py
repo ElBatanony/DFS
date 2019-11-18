@@ -1,7 +1,6 @@
 import socket
 
 from constants import *
-from logs import logger
 from receiver import *
 from sender import *
 from status_codes import *

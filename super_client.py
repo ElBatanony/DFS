@@ -61,6 +61,10 @@ def create_file(file_name: str):
 def write_file(file_name: str):
     storage = send_command_to_naming_server(CMD_GET_STORAGE, [])
 
+    if storage is None or len(storage) == 0:
+        logger.info('storage is empty')
+        return False
+
     file_id = send_command_to_naming_server(CMD_WRITE_FILE, [file_name])
     if file_id is None or file_id is False:
         logger.info('error: file_id is %s' % file_id)
