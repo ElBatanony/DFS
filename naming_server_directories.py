@@ -1,6 +1,8 @@
+from logs import logger
 from status_codes import *
 
 directories = {}
+
 
 class Directory:
     def __init__(self, path):
@@ -10,15 +12,19 @@ class Directory:
 
 
 def get_prev(path): return '/'.join(path.split('/')[:-1])
+
+
 def get_last(path): return path.split('/')[-1]
+
 
 def reset_directories():
     global directories
     directories = {}
     directories[''] = Directory('')
 
+
 def check_directory(directory_path):
-    print('checking dir ' + directory_path)
+    logger.info('checking dir ' + directory_path)
     if directory_path in directories:
         return CODE_OK
     else:
@@ -38,7 +44,7 @@ def read_directory(directory_path):
 
 
 def make_directory(directory_path):
-    print('make dir ' + directory_path)
+    logger.info('make dir ' + directory_path)
     if directory_path in directories:
         return CODE_DIRECTORY_ALREADY_EXIST
     directories[directory_path] = Directory(directory_path)
@@ -48,7 +54,7 @@ def make_directory(directory_path):
 
 
 def delete_directory(directory_path, force):
-    print('del dir ' + directory_path)
+    logger.info('del dir ' + directory_path)
     if directory_path in directories:
         dir_files = directories[directory_path].files
         dir_dir = directories[directory_path].directories
@@ -58,8 +64,8 @@ def delete_directory(directory_path, force):
                 return DIR_DELETE_HAS_FILES
 
         for file in dir_files:
-            print('no delete function defined')
-            #delete_file(directory_path + '/' + file)
+            logger.info('no delete function defined')
+            # delete_file(directory_path + '/' + file)
         for dir in dir_dir:
             delete_directory(directory_path + '/' + dir, True)
 

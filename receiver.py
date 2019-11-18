@@ -1,6 +1,7 @@
 import os
 
 from constants import BUFFER_SIZE
+from logs import logger
 from web_format_converter import web_to_int
 
 
@@ -42,4 +43,4 @@ def receive_file(sock, file_name, root_dir):
                 raise Exception('error during file transfer')
             sw.write(file)
 
-    print('%s received' % file_name)
+    logger.info('%s received' % file_name)

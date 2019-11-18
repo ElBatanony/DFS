@@ -1,6 +1,7 @@
 import os
 
 from constants import BUFFER_SIZE
+from logs import logger
 from web_format_converter import int32_to_web, int64_to_web
 
 
@@ -29,7 +30,6 @@ def send_file(sock, file_name, root_dir):
         return
 
     with open(os.path.join(root_dir, file_name), 'rb') as sr:
-        print(file_name)
         while sent_file_size <= file_size:
             sock.send(sr.read(BUFFER_SIZE))
             sent_file_size += BUFFER_SIZE
@@ -38,6 +38,6 @@ def send_file(sock, file_name, root_dir):
             if percentage > 100:
                 percentage = 100
 
-            print(str(percentage) + '%')
+            logger.info(str(percentage) + '%')
 
-    print('%s sent' % file_name)
+    logger.info('%s sent' % file_name)
