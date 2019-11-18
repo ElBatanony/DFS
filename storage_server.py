@@ -49,7 +49,7 @@ class ClientListener(Thread):
             return
 
         if os.path.exists(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
-            os.remove(file_name)
+            os.remove(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name))
             self.sock.send(int32_to_web(CODE_OK))
             print("file {0} removed.".format(file_name))
         else:

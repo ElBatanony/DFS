@@ -107,8 +107,10 @@ def copy_file(old_file_name: str, new_file_name: str):
     shutil.copy(os.path.join(CLIENT_ROOT_PATH, old_file_name), os.path.join(CLIENT_ROOT_PATH, new_file_name))
 
 
-def delete_file(sock: socket.socket, file_name: str):
-    return CODE_OK
+def delete_file(file_name: str):
+    if not send_command_to_naming_server(CMD_DELETE_FILE, [file_name]):
+        print('error while removing a file')
+    print('file removed')
 
 
 def file_info(sock, file_name):
@@ -166,6 +168,8 @@ def main():
             file_info(naming_server_sock, args[0])
         elif cmd == 'mv' and len(args) == 2:
             move_file(naming_server_sock, args[0], args[1])
+        elif cmd == 'rm' and len(args) == 1:
+            delete_file(args[0])
         elif cmd == 'cd' and len(args) == 1:
             open_directory(naming_server_sock, args[0])
         elif cmd == 'ls' and len(args) == 0:

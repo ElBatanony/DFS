@@ -233,6 +233,28 @@ class ClientListener(Thread):
 
         send_int32(self.sock, CODE_OK)
 
+    def delete_file(self):
+        try:
+            full_file_name = receive_str(self.sock)
+        except Exception as e:
+            print(str(e))
+            return
+        path_to_file = get_directory_from_full_file_name(full_file_name)
+        if path_to_file not in directories:
+            print('directory %s does not exist' % path_to_file)
+            send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
+            return
+        dir = directories[path_to_file]
+        file_name = get_last(full_file_name)
+        if file_name not in dir.files:
+            print('file %s does not exist' % file_name)
+            send_int32(self.sock, CODE_FILE_NOT_EXIST)
+            return
+        file = dir.files[file_name]
+        for s in storage:
+            send_command_to_storage_server(s, CMD_DELETE_FILE, [file.id])
+        send_int32(self.sock, CODE_OK)
+
     def run(self):
         try:
             cmd = web_to_int(self.sock.recv(32))
@@ -267,6 +289,8 @@ class ClientListener(Thread):
             new_dir = receive_str(self.sock)
             ret = move_file(file_path, new_dir)
             send_str(self.sock, ret)
+        elif cmd == CMD_DELETE_FILE:
+            self.delete_file()
         elif cmd == CMD_CHECK_DIR:
             directory_path = receive_str(self.sock)
             ret = check_directory(directory_path)

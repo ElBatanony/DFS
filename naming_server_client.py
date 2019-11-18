@@ -6,6 +6,23 @@ from receiver import *
 from sender import *
 
 
+def delete_file(sock: socket.socket, file_name: str):
+    send_int32(sock, CMD_DELETE_FILE)
+    send_str(sock, file_name)
+    try:
+        code = receive_int32(sock)
+    except Exception as e:
+        print(str(e))
+        return False
+    if code != CODE_OK:
+        print('error with code %d when deleting file' % code)
+        return False
+    file_path = os.path.join(CLIENT_ROOT_PATH, file_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    return True
+
+
 def ping_as_storage(sock):
     send_int32(sock, CMD_PING_AS_STORAGE)
     send_int32(sock, CODE_OK)
@@ -184,6 +201,8 @@ def send_command_to_naming_server(cmd: int, args):
         result = read_file(sock, args[0])
     elif cmd == CMD_COPY_FILE and len(args) == 2:
         result = copy_file(sock, args[0], args[1])
+    elif cmd == CMD_DELETE_FILE and len(args) == 1:
+        result = delete_file(sock, args[0])
     elif cmd == CMD_OPEN_DIR and len(args) == 1:
         result = open_directory(sock, args[0])
     elif cmd == CMD_READ_DIR and len(args) == 0:
