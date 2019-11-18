@@ -12,10 +12,10 @@ def delete_file(sock: socket.socket, file_name: str):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     if code != CODE_OK:
-        print('error with code %d when deleting file' % code)
+        logger.info('error with code %d when deleting file' % code)
         return False
     file_path = os.path.join(CLIENT_ROOT_PATH, file_name)
     if os.path.exists(file_path):
@@ -29,12 +29,12 @@ def ping_as_storage(sock):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
-    print('ping is successful')
+    logger.info('ping is successful')
     return True
 
 
@@ -44,7 +44,7 @@ def confirm_file_upload(sock, file_id):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     if code != CODE_OK:
         return False
@@ -59,16 +59,16 @@ def get_storage(sock):
         try:
             storage.append(receive_str(sock))
         except Exception as e:
-            print(str(e))
+            logger.info(str(e))
             return False
 
-    print('received storage: %s' % str(storage))
+    logger.info('received storage: %s' % str(storage))
     return storage
 
 
 def write_file(sock, file_name):
     if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
-        print('error "file does not exist" received after sending "write_file" from naming server client')
+        logger.info('error "file does not exist" received after sending "write_file" from naming server client')
         return False
 
     send_int32(sock, CMD_WRITE_FILE)
@@ -78,20 +78,20 @@ def write_file(sock, file_name):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
 
     if code != CODE_OK:
-        print('error with code %d received after sending "write_file" from naming server client' % code)
+        logger.info('error with code %d received after sending "write_file" from naming server client' % code)
         return False
 
     try:
         file_id = receive_str(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
 
-    print('received file id %s' % file_id)
+    logger.info('received file id %s' % file_id)
     return file_id
 
 
@@ -102,20 +102,20 @@ def read_file(sock, file_name):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
 
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
 
     try:
         file_id = receive_str(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
 
-    print('received file id %s' % file_id)
+    logger.info('received file id %s' % file_id)
     return file_id
 
 
@@ -126,12 +126,12 @@ def copy_file(sock, source_file_name, destination_file_name):
     try:
         code = receive_int32(sock)
     except Exception as e:
-        print(str(e))
+        logger.info(str(e))
         return False
     if code != CODE_OK:
-        print('error with code %d' % code)
+        logger.info('error with code %d' % code)
         return False
-    print('file copied')
+    logger.info('file copied')
     return True
 
 
@@ -139,40 +139,40 @@ def open_directory(sock, directory_name):
     send_int32(sock, CMD_OPEN_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
-    print('cd response: ' + ret)
+    logger.info('cd response: ' + ret)
 
 
 def read_directory(sock):
     send_int32(sock, CMD_READ_DIR)
     dir = receive_str(sock)
-    print('ls response: ' + dir)
+    logger.info('ls response: ' + dir)
 
 
 def make_directory(sock, directory_name):
     send_int32(sock, CMD_MAKE_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
-    print('mkdir response: ' + ret)
+    logger.info('mkdir response: ' + ret)
 
 
 def delete_directory(sock, directory_name):
     send_int32(sock, CMD_DELETE_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
-    print('rmdir response: ' + ret)
+    logger.info('rmdir response: ' + ret)
 
 
 def init_server(sock):
     send_int32(sock, CMD_INIT)
     ret = receive_str(sock)
-    print('init response: ' + ret)
+    logger.info('init response: ' + ret)
 
 
 def file_info(sock, file_name):
     send_int32(sock, CMD_FILE_INFO)
     send_str(sock, file_name)
     ret = receive_str(sock)
-    print('info response: ' + ret)
+    logger.info('info response: ' + ret)
 
 
 def move_file(sock, file_name, new_path):
@@ -180,7 +180,7 @@ def move_file(sock, file_name, new_path):
     send_str(sock, file_name)
     send_str(sock, new_path)
     ret = receive_str(sock)
-    print('mv response: ' + ret)
+    logger.info('mv response: ' + ret)
 
 
 def send_command_to_naming_server(cmd: int, args):
@@ -221,7 +221,7 @@ def send_command_to_naming_server(cmd: int, args):
     elif cmd == CMD_PING_AS_STORAGE and len(args) == 0:
         result = ping_as_storage(sock)
     else:
-        print('Command-arguments combination unrecognized')
+        logger.info('Command-arguments combination unrecognized')
 
     sock.close()
     return result
