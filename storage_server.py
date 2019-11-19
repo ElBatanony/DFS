@@ -35,7 +35,7 @@ class ClientListener(Thread):
             logger.info(str(e))
             self._close()
             return
-
+        logger.info('received command to replicate file "%s" from %s' % (file_name, source_address))
         send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
         send_int32(self.sock, CODE_OK)
 
