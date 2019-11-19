@@ -93,7 +93,10 @@ def write_file(sock, path_to_source_file: str, path_to_destination_file: str, ro
     return True
 
 
-def send_command_to_storage_server(host: str, cmd: int, args=[]):
+def send_command_to_storage_server(host: str, cmd: int, args):
+    if args is None:
+        args = []
+
     port = STORAGE_SERVER_PORT
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

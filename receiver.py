@@ -14,7 +14,7 @@ def receive_str(sock):
     if value is None:
         raise Exception('error during string reading')
 
-    return value
+    return str(value)
 
 
 def receive_int32(sock):
