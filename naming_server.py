@@ -131,6 +131,7 @@ class ClientListener(Thread):
             return
 
         if file_id not in write_file_map:
+            logger.info('file id is not in write_file_map')
             return
 
         file, directory = write_file_map[file_id]
