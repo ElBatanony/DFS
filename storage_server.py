@@ -108,7 +108,7 @@ class ClientListener(Thread):
         if not os.path.isfile(os.path.join(STORAGE_SERVER_ROOT_PATH, file_name)):
             self.sock.send(int32_to_web(CODE_FILE_NOT_EXIST))
             self._close()
-            logger.info('error: file %s does not exist' % file_name)
+            logger.info('error: file "%s" does not exist' % file_name)
             return
         else:
             self.sock.send(int32_to_web(CODE_OK))
