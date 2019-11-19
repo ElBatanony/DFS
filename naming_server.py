@@ -28,11 +28,14 @@ class File:
 
 def ping_storages():
     while True:
-        logger.info('pinging storages')
+        available_storages = []
         for st in storage:
             if not send_command_to_storage_server(st, CMD_PING_AS_NAMING, []):
                 logger.info('lost ' + st)
                 storage.remove(st)
+            else:
+                available_storages.append(st)
+        logger.info('available storage: %s' % str(available_storages))
         time.sleep(PING_SERVERS_SECONDS)
 
 
