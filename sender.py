@@ -31,8 +31,9 @@ def send_file(sock, file_name, root_dir):
 
     with open(os.path.join(root_dir, file_name), 'rb') as sr:
         while sent_file_size <= file_size:
-            sock.send(sr.read(BUFFER_SIZE))
-            sent_file_size += BUFFER_SIZE
+            buffer = min(file_size - sent_file_size, BUFFER_SIZE)
+            sock.send(sr.read(buffer))
+            sent_file_size += buffer
 
             percentage = int(100 * sent_file_size / file_size)
             if percentage > 100:

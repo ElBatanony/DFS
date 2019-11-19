@@ -160,6 +160,7 @@ class ClientListener(Thread):
         path_to_file = get_directory_from_full_file_name(full_file_name)
 
         if path_to_file not in directories:
+            logger.info('directory %s does not exist' % path_to_file)
             send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
 
@@ -185,6 +186,7 @@ class ClientListener(Thread):
         path_to_file = get_directory_from_full_file_name(full_file_name)
 
         if path_to_file not in directories:
+            logger.info('directory %s does not exist' % path_to_file)
             send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
 
@@ -192,6 +194,7 @@ class ClientListener(Thread):
         file_name = get_last(full_file_name)
 
         if file_name not in directory.files:
+            logger.info('file %s does not exist' % file_name)
             send_int32(self.sock, CODE_FILE_NOT_EXIST)
             return
 
@@ -216,7 +219,13 @@ class ClientListener(Thread):
         path_to_source_file = get_directory_from_full_file_name(full_source_file_name)
         path_to_destination_file = get_directory_from_full_file_name(full_destination_file_name)
 
-        if path_to_source_file not in directories or path_to_destination_file not in directories:
+        if path_to_source_file not in directories:
+            logger.info('directory %s does not exist' % path_to_source_file)
+            send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
+            return
+
+        if path_to_destination_file not in directories:
+            logger.info('directory %s does not exist' % path_to_destination_file)
             send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
 
@@ -227,7 +236,9 @@ class ClientListener(Thread):
         destination_file_name = get_last(full_destination_file_name)
 
         if source_file_name not in source_directory.files:
+            logger.info('file %s does not exist' % source_file_name)
             send_int32(self.sock, CODE_FILE_NOT_EXIST)
+            return
 
         source_file = source_directory.files[source_file_name]
 
@@ -327,7 +338,7 @@ class ClientListener(Thread):
             ret = delete_directory(directory_path, force)
             send_str(self.sock, ret)
         else:
-            logger.info('error reading command code')
+            logger.info('error reading command code %d' % cmd)
 
         self._close()
 
