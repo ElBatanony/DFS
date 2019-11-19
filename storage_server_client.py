@@ -103,7 +103,7 @@ def send_command_to_storage_server(host: str, cmd: int, args):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     try:
-        print('sends command to storage server %s' % host)
+        logger.info('sends command to storage server %s' % host)
         sock.connect((host, port))
     except Exception as e:
         logger.info(str(e))
