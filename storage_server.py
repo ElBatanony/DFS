@@ -23,6 +23,7 @@ class ClientListener(Thread):
         logger.info(self.name + ' disconnected')
 
     def replicate_file(self):
+        logger.info('received replication command')
         try:
             source_address = receive_str(self.sock)
         except Exception as e:

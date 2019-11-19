@@ -129,31 +129,3 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
 
     sock.close()
     return result
-
-
-def get_command_from_str(cmd: str):
-    if cmd == 'w':
-        return CMD_WRITE_FILE
-    elif cmd == 'r':
-        return CMD_READ_FILE
-    elif cmd == 'c':
-        return CMD_COPY_FILE
-    elif cmd == 'd':
-        return CMD_DELETE_FILE
-    elif cmd == 'n':
-        return CMD_CREATE_EMPTY_FILE
-    elif cmd == 'i':
-        return CMD_FILE_INFO
-
-
-def main():
-    while True:
-        args = input('Enter command:').split()
-        try:
-            send_command_to_storage_server('localhost', get_command_from_str(args[0]), args[1:])
-        except Exception as e:
-            logger.info(str(e))
-
-
-if __name__ == "__main__":
-    main()
