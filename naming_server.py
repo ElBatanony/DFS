@@ -283,6 +283,7 @@ class ClientListener(Thread):
             send_int32(self.sock, CODE_FILE_NOT_EXIST)
             return
         file = dir.files[file_name]
+        del dir.files[file_name]
         for s in storage:
             send_command_to_storage_server(s, CMD_DELETE_FILE, [file.id])
         send_int32(self.sock, CODE_OK)
