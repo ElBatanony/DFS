@@ -130,18 +130,18 @@ class ClientListener(Thread):
             logger.info(str(e))
             return
 
-        if file_id in write_file_map:
-            file, directory = write_file_map[file_id]
-            directory.files[file.name] = file
-            del write_file_map[file_id]
-            logger.info('file "%s" confirmed' % file.name)
-        else:
-            logger.info('file with id "%s" exists in map' % file_id)
+        if file_id not in write_file_map:
+            return
+
+        file, directory = write_file_map[file_id]
+        directory.files[file.name] = file
+        del write_file_map[file_id]
+        logger.info('file "%s" confirmed' % file.name)
 
         for s in storage:
             if s != ip:
                 logger.info('sent request to %s to replicate file "%s" from %s' % (s, file_id, ip))
-                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [ip, file_id])
+                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [ip, file.id])
 
         send_int32(self.sock, CODE_OK)
 
@@ -172,7 +172,8 @@ class ClientListener(Thread):
             file = directory.files[file_name]
         else:
             file = File(file_name, file_size)
-            write_file_map[file.id] = file, directory
+
+        write_file_map[file.id] = file, directory
 
         send_int32(self.sock, CODE_OK)
         send_str(self.sock, file.id)
