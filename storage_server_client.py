@@ -60,7 +60,7 @@ def copy_file(sock, old_file_name, new_file_name):
     return True
 
 
-def read_file(sock: socket.socket, path_to_source_file: str, path_to_destination_file: str):
+def read_file(sock: socket.socket, path_to_source_file: str, path_to_destination_file: str, root_dir: str):
     send_int32(sock, CMD_READ_FILE)
     send_str(sock, path_to_source_file)
     code = receive_int32(sock)
@@ -68,7 +68,7 @@ def read_file(sock: socket.socket, path_to_source_file: str, path_to_destination
         logger.info('error with code %d' % code)
         return False
     try:
-        receive_file(sock, path_to_destination_file, CLIENT_ROOT_PATH)
+        receive_file(sock, path_to_destination_file, root_dir)
     except Exception as e:
         logger.info(str(e))
         return False
@@ -109,8 +109,11 @@ def send_command_to_storage_server(host: str, cmd: int, args=[]):
 
     if cmd == CMD_WRITE_FILE and len(args) == 3:
         result = write_file(sock, args[0], args[1], args[2])
-    elif cmd == CMD_READ_FILE and len(args) == 2:
-        result = read_file(sock, args[0], args[1])
+    elif cmd == CMD_READ_FILE and len(args) >= 2:
+        if len(args) == 3:
+            result = read_file(sock, args[0], args[1], args[2])
+        else:
+            result = read_file(sock, args[0], args[1], CLIENT_ROOT_PATH)
     elif cmd == CMD_COPY_FILE and len(args) == 2:
         result = copy_file(sock, args[0], args[1])
     elif cmd == CMD_DELETE_FILE and len(args) == 1:

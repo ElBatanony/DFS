@@ -36,7 +36,7 @@ class ClientListener(Thread):
             self._close()
             return
 
-        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name])
+        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
         send_int32(self.sock, CODE_OK)
 
     def ping_as_naming(self):
