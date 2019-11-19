@@ -99,6 +99,7 @@ class ClientListener(Thread):
         send_command_to_naming_server(CMD_CONFIRM_FILE_UPLOAD, [file_name])
 
     def read_file(self):
+        logger.info('received read command')
         try:
             file_name = receive_str(self.sock)
         except Exception as e:
