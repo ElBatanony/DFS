@@ -140,6 +140,7 @@ class ClientListener(Thread):
 
         for s in storage:
             if s != ip:
+                logger.info('sent request to %s to replicate file %s' % (ip, file_id))
                 send_command_to_storage_server(s, CMD_REPLICATE_FILE, [ip, file.id])
 
         send_int32(self.sock, CODE_OK)
