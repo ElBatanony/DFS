@@ -132,7 +132,7 @@ class ClientListener(Thread):
 
 if __name__ == "__main__":
 
-    STORAGE_SERVER_ROOT_PATH = STORAGE_SERVER_ROOT_PATH + str( random.randint(10,100) )
+    initialize()
 
     # Create directory to receive files
     if not os.path.isdir(STORAGE_SERVER_ROOT_PATH):

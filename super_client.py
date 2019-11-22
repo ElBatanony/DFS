@@ -243,7 +243,7 @@ def read_directory(sock):
                 print('Created directory ' + new_dir_name)
                 os.mkdir(path_plus() + new_dir_name)
     
-    print(path+': ' + dir)
+    print(path+': ' + dir.replace(',', ' ') )
 
 def make_directory(sock, directory_name):
     send_code(sock, CMD_MAKE_DIR)
@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
         inp = input('Enter command: ')
         cmd = inp.split(' ')[0]
-        args = inp.split(' ')[1:]
+        args = inp.split(' ')[1:] # double check that arguments are not empty strings
 
         if cmd == 'init' and len(args) == 0: initialize(naming_server_sock)
         elif cmd == 'touch' and len(args) == 1: create_file(naming_server_sock, args[0])

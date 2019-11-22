@@ -32,7 +32,7 @@ class Directory:
 
 def ping_storages():
     while True:
-        print('Pining storage servers. ' + get_storages() )
+        print('Pinging storage servers. ' + get_storages() )
         for storage_server_ip in storage_servers:
             storage_sock = open_socket(storage_server_ip, STORAGE_SERVER_PORT)
             if not storage_sock:
