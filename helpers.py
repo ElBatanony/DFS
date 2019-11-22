@@ -1,6 +1,6 @@
 import socket
 import os
-from constants import *
+from constants_and_codes import *
 
 def int64_to_web(value): return int.to_bytes(value, byteorder='big', length=64, signed=False)
 def int32_to_web(value): return int.to_bytes(value, byteorder='big', length=32, signed=False)

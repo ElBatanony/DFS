@@ -5,9 +5,8 @@ import threading
 import time
 from threading import Thread
 
-from status_codes import *
 from helpers import *
-from constants import *
+from constants_and_codes import *
 
 directories = {}
 storage_servers = []

@@ -2,8 +2,7 @@ import shutil
 import socket
 from threading import Thread
 
-from constants import *
-from status_codes import *
+from constants_and_codes import *
 from helpers import *
 
 import random
