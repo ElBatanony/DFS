@@ -1,13 +1,15 @@
+import os
 import shutil
 import socket
 from threading import Thread
 
-from constants import *
+from constants import STORAGE_SERVER_ROOT_PATH, STORAGE_SERVER_PORT, CONNECTIONS_QUEUE_SIZE
 from logs import initialize_logs, logger
 from naming_server_client import send_command_to_naming_server
-from receiver import *
-from sender import *
-from status_codes import *
+from receiver import receive_str, receive_file
+from sender import send_int32, send_file
+from status_codes import CMD_READ_FILE, CODE_OK, CODE_FILE_NOT_EXIST, CMD_CONFIRM_FILE_UPLOAD, CMD_WRITE_FILE, \
+    CMD_COPY_FILE, CMD_DELETE_FILE, CMD_REPLICATE_FILE, CMD_PING_AS_NAMING, CMD_PING_AS_STORAGE
 from storage_server_client import send_command_to_storage_server
 from web_format_converter import *
 
@@ -26,14 +28,14 @@ class ClientListener(Thread):
         logger.info('received replication command')
         try:
             source_address = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
         try:
             file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
         logger.info('received command to replicate file "%s" from %s' % (file_name, source_address))
@@ -46,8 +48,8 @@ class ClientListener(Thread):
     def delete_file(self):
         try:
             file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
 
@@ -63,15 +65,15 @@ class ClientListener(Thread):
     def copy_file(self):
         try:
             old_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
 
         try:
             new_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
 
@@ -85,14 +87,14 @@ class ClientListener(Thread):
     def write_file(self):
         try:
             file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
         try:
             receive_file(self.sock, file_name, STORAGE_SERVER_ROOT_PATH)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
         send_int32(self.sock, CODE_OK)
@@ -102,8 +104,8 @@ class ClientListener(Thread):
         logger.info('received read command')
         try:
             file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
 
@@ -148,7 +150,7 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', STORAGE_SERVER_PORT))
-    sock.listen()
+    sock.listen(backlog=CONNECTIONS_QUEUE_SIZE)
 
     while True:
         connection, address = sock.accept()

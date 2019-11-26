@@ -1,5 +1,6 @@
 from logs import logger
-from status_codes import *
+from status_codes import CODE_DIRECTORY_NOT_EXIST, CODE_OK, CODE_DIRECTORY_ALREADY_EXIST, DIR_MAKE_OK, \
+    DIR_DELETE_HAS_FILES, DIR_DELETE_OK, DIR_DELETE_NOT_EXIST
 
 directories = {}
 
@@ -19,8 +20,7 @@ def get_last(path): return path.split('/')[-1]
 
 def reset_directories():
     global directories
-    directories = {}
-    directories[''] = Directory('')
+    directories = {'': Directory('')}
 
 
 def check_directory(directory_path):
@@ -34,8 +34,8 @@ def check_directory(directory_path):
 def read_directory(directory_path):
     if directory_path in directories:
         ret = ' '
-        for dir in directories[directory_path].directories:
-            ret += dir + '/ '
+        for d in directories[directory_path].directories:
+            ret += d + '/ '
         for file in directories[directory_path].files.keys():
             ret += file + ' '
         return ret
@@ -63,11 +63,11 @@ def delete_directory(directory_path, force):
             if dir_files or dir_dir:
                 return DIR_DELETE_HAS_FILES
 
-        for file in dir_files:
+        for _ in dir_files:
             logger.info('no delete function defined')
             # delete_file(directory_path + '/' + file)
-        for dir in dir_dir:
-            delete_directory(directory_path + '/' + dir, True)
+        for d in dir_dir:
+            delete_directory(directory_path + '/' + d, True)
 
         directory_name = directory_path.split('/')[-1]
 

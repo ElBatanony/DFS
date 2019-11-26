@@ -1,25 +1,28 @@
-import socket
+import os
 import shutil
+import socket
 from pathlib import Path
 
-from constants import *
+from constants import CLIENT_ROOT_PATH, INITIAL_SIZE, NAMING_SERVER_PORT, NAMING_SERVER_IP
 from logs import initialize_logs, logger
-from naming_server_client import send_command_to_naming_server
-from status_codes import *
-from receiver import *
-from sender import *
+from naming_server_client import send_command_to_naming_server, open_directory, read_directory, make_directory, \
+    delete_directory
+from receiver import receive_str
+from sender import send_int32, send_str
+from status_codes import CMD_INIT, CODE_OK, CMD_GET_STORAGE, CMD_READ_FILE, CMD_DELETE_FILE, CMD_COPY_FILE, \
+    CMD_FILE_INFO, CMD_FILE_MOVE, CMD_WRITE_FILE
 from storage_server_client import send_command_to_storage_server
-from super_client_directories import *
+from super_client_directories import reset_path, storage_path_plus, path_plus
 
 
-def open_socket(ip, port):
+def open_socket(ip: str, port: int):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, port))
     return sock
 
 
-def init_server(sock):
+def init_server(sock: socket.socket):
     # Send initialize command to naming server
     send_int32(sock, CMD_INIT)
     # Receive confirmation that it was completed
@@ -118,14 +121,14 @@ def delete_file(file_name: str):
     logger.info('file removed')
 
 
-def file_info(sock, file_name):
+def file_info(sock: socket.socket, file_name: str):
     send_int32(sock, CMD_FILE_INFO)
     send_str(sock, file_name)
     ret = receive_str(sock)
     logger.info('info response: ' + ret)
 
 
-def move_file(sock, file_name, new_dir):
+def move_file(sock: socket.socket, file_name: str, new_dir: str):
     send_int32(sock, CMD_FILE_MOVE)
     file_path = storage_path_plus() + file_name
     if new_dir == 'root': new_dir = ''

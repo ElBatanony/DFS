@@ -1,9 +1,12 @@
+import os
 import socket
 
-from constants import *
-from receiver import *
-from sender import *
-from status_codes import *
+from constants import CLIENT_ROOT_PATH, STORAGE_SERVER_PORT
+from logs import logger
+from receiver import receive_int32, receive_str, receive_file
+from sender import send_int32, send_str, send_file
+from status_codes import CMD_PING_AS_NAMING, CODE_OK, CMD_REPLICATE_FILE, CMD_FILE_INFO, CMD_DELETE_FILE, \
+    CMD_COPY_FILE, CMD_READ_FILE, CMD_WRITE_FILE
 
 
 def ping_as_naming(sock):

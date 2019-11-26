@@ -1,10 +1,15 @@
+import os
 import socket
 
-from constants import *
-from status_codes import *
-from receiver import *
-from sender import *
 from requests import get
+
+from constants import CLIENT_ROOT_PATH, NAMING_SERVER_IP, NAMING_SERVER_PORT
+from logs import logger
+from receiver import receive_int32, receive_str
+from sender import send_int32, send_str, send_int64
+from status_codes import CMD_DELETE_FILE, CODE_OK, CMD_PING_AS_STORAGE, CMD_CONFIRM_FILE_UPLOAD, CMD_GET_STORAGE, \
+    CMD_WRITE_FILE, CMD_READ_FILE, CMD_COPY_FILE, CMD_OPEN_DIR, CMD_READ_DIR, CMD_MAKE_DIR, CMD_DELETE_DIR, CMD_INIT, \
+    CMD_FILE_INFO, CMD_FILE_MOVE
 
 
 def delete_file(sock: socket.socket, file_name: str):
@@ -28,7 +33,7 @@ def get_ip():
     return get('https://api.ipify.org').text
 
 
-def ping_as_storage(sock):
+def ping_as_storage(sock: socket.socket):
     send_int32(sock, CMD_PING_AS_STORAGE)
     ip = get_ip()
     send_str(sock, ip)
@@ -44,7 +49,7 @@ def ping_as_storage(sock):
     return True
 
 
-def confirm_file_upload(sock, file_id):
+def confirm_file_upload(sock: socket.socket, file_id: str):
     send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
     ip = get_ip()
     send_str(sock, ip)
@@ -59,7 +64,7 @@ def confirm_file_upload(sock, file_id):
     return True
 
 
-def get_storage(sock):
+def get_storage(sock: socket.socket):
     send_int32(sock, CMD_GET_STORAGE)
     size = receive_int32(sock)
     storage = []
@@ -74,7 +79,7 @@ def get_storage(sock):
     return storage
 
 
-def write_file(sock, file_name):
+def write_file(sock: socket.socket, file_name: str):
     if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
         logger.info('error "file does not exist" received after sending "write_file" from naming server client')
         return False
@@ -103,7 +108,7 @@ def write_file(sock, file_name):
     return file_id
 
 
-def read_file(sock, file_name):
+def read_file(sock: socket.socket, file_name: str):
     send_int32(sock, CMD_READ_FILE)
     send_str(sock, file_name)
 
@@ -127,7 +132,7 @@ def read_file(sock, file_name):
     return file_id
 
 
-def copy_file(sock, source_file_name, destination_file_name):
+def copy_file(sock: socket.socket, source_file_name: str, destination_file_name: str):
     send_int32(sock, CMD_COPY_FILE)
     send_str(sock, source_file_name)
     send_str(sock, destination_file_name)
@@ -143,47 +148,47 @@ def copy_file(sock, source_file_name, destination_file_name):
     return True
 
 
-def open_directory(sock, directory_name):
+def open_directory(sock: socket.socket, directory_name: str):
     send_int32(sock, CMD_OPEN_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
     logger.info('cd response: ' + ret)
 
 
-def read_directory(sock):
+def read_directory(sock: socket.socket):
     send_int32(sock, CMD_READ_DIR)
-    dir = receive_str(sock)
-    logger.info('ls response: ' + dir)
+    d = receive_str(sock)
+    logger.info('ls response: ' + d)
 
 
-def make_directory(sock, directory_name):
+def make_directory(sock: socket.socket, directory_name: str):
     send_int32(sock, CMD_MAKE_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
     logger.info('mkdir response: ' + ret)
 
 
-def delete_directory(sock, directory_name):
+def delete_directory(sock: socket.socket, directory_name: str):
     send_int32(sock, CMD_DELETE_DIR)
     send_str(sock, directory_name)
     ret = receive_str(sock)
     logger.info('rmdir response: ' + ret)
 
 
-def init_server(sock):
+def init_server(sock: socket.socket):
     send_int32(sock, CMD_INIT)
     ret = receive_str(sock)
     logger.info('init response: ' + ret)
 
 
-def file_info(sock, file_name):
+def file_info(sock: socket.socket, file_name: str):
     send_int32(sock, CMD_FILE_INFO)
     send_str(sock, file_name)
     ret = receive_str(sock)
     logger.info('info response: ' + ret)
 
 
-def move_file(sock, file_name, new_path):
+def move_file(sock: socket.socket, file_name: str, new_path: str):
     send_int32(sock, CMD_FILE_MOVE)
     send_str(sock, file_name)
     send_str(sock, new_path)
@@ -191,7 +196,7 @@ def move_file(sock, file_name, new_path):
     logger.info('mv response: ' + ret)
 
 
-def send_command_to_naming_server(cmd: int, args):
+def send_command_to_naming_server(cmd: int, args: list):
     host = NAMING_SERVER_IP
     port = NAMING_SERVER_PORT
 
@@ -213,19 +218,19 @@ def send_command_to_naming_server(cmd: int, args):
     elif cmd == CMD_DELETE_FILE and len(args) == 1:
         result = delete_file(sock, args[0])
     elif cmd == CMD_OPEN_DIR and len(args) == 1:
-        result = open_directory(sock, args[0])
+        open_directory(sock, args[0])
     elif cmd == CMD_READ_DIR and len(args) == 0:
-        result = read_directory(sock)
+        read_directory(sock)
     elif cmd == CMD_MAKE_DIR and len(args) == 1:
-        result = make_directory(sock, args[0])
+        make_directory(sock, args[0])
     elif cmd == CMD_DELETE_DIR and len(args) == 1:
-        result = delete_directory(sock, args[0])
+        delete_directory(sock, args[0])
     elif cmd == CMD_INIT and len(args) == 0:
-        result = init_server(sock)
+        init_server(sock)
     elif cmd == CMD_FILE_INFO and len(args) == 1:
-        result = file_info(sock, args[0])
+        file_info(sock, args[0])
     elif cmd == CMD_FILE_MOVE and len(args) == 2:
-        result = move_file(sock, args[0], args[1])
+        move_file(sock, args[0], args[1])
     elif cmd == CMD_PING_AS_STORAGE and len(args) == 0:
         result = ping_as_storage(sock)
     else:

@@ -1,13 +1,17 @@
 import socket
-import sys
 import uuid
 from threading import Thread
-from status_codes import *
-from receiver import *
-from sender import *
-from constants import *
+
+from constants import PING_SERVERS_SECONDS, NAMING_SERVER_PORT, CONNECTIONS_QUEUE_SIZE
+from naming_server_directories import get_prev, delete_directory, reset_directories, get_last, directories, \
+    check_directory, read_directory, make_directory, Directory
+from receiver import receive_str, receive_int64, receive_int32
+from sender import send_int32, send_str
+from status_codes import CMD_PING_AS_NAMING, CODE_OK, ERR_FILE_NOT_EXIST, ERR_FILE_DIR_NOT_EXIST, ERR_DIR_NOT_EXIST, \
+    CMD_REPLICATE_FILE, CODE_DIRECTORY_NOT_EXIST, CODE_FILE_NOT_EXIST, CMD_COPY_FILE, CMD_DELETE_FILE, CMD_INIT, \
+    CMD_PING_AS_STORAGE, CMD_GET_STORAGE, CMD_WRITE_FILE, CMD_READ_FILE, CMD_CONFIRM_FILE_UPLOAD, CMD_FILE_INFO, \
+    CMD_FILE_MOVE, CMD_CHECK_DIR, CMD_READ_DIR, CMD_MAKE_DIR, CMD_DELETE_DIR
 from storage_server_client import send_command_to_storage_server
-from naming_server_directories import *
 import threading
 import time
 from logs import logger, initialize_logs
@@ -26,7 +30,7 @@ class File:
         self.id = str(uuid.uuid4())
 
 
-def ping_storages():
+def ping_storage():
     while True:
         available_storages = []
         for st in storage:
@@ -39,7 +43,7 @@ def ping_storages():
         time.sleep(PING_SERVERS_SECONDS)
 
 
-def get_directory_from_full_file_name(file_name):
+def get_directory_from_full_file_name(file_name: str):
     if len(file_name.split('/')) == 1:
         return ''
     return get_prev(file_name)
@@ -51,7 +55,7 @@ def initialize():
     return CODE_OK
 
 
-def file_info(file_path):
+def file_info(file_path: str):
     file_dir = get_prev(file_path)
     file_name = get_last(file_path)
     if file_dir in directories:
@@ -65,7 +69,7 @@ def file_info(file_path):
         return ERR_FILE_DIR_NOT_EXIST
 
 
-def move_file(file_path, new_dir):
+def move_file(file_path: str, new_dir: str):
     file_dir = get_prev(file_path)
     file_name = get_last(file_path)
     if file_dir in directories:
@@ -102,8 +106,8 @@ class ClientListener(Thread):
     def ping_as_storage(self):
         try:
             ip = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         send_int32(self.sock, CODE_OK)
@@ -111,8 +115,8 @@ class ClientListener(Thread):
         storage.append(ip)
         logger.info('%s storage connected' % ip)
 
-        for dir in directories.values():
-            for f in dir.files.values():
+        for d in directories.values():
+            for f in d.files.values():
                 send_command_to_storage_server(ip, CMD_REPLICATE_FILE, [storage[0], f.id])
 
     ''' Files Section '''
@@ -120,14 +124,14 @@ class ClientListener(Thread):
     def confirm_file_upload(self):
         try:
             ip = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         try:
             file_id = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         if file_id not in write_file_map:
@@ -149,14 +153,14 @@ class ClientListener(Thread):
     def write_file(self):
         try:
             full_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         try:
             file_size = receive_int64(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         path_to_file = get_directory_from_full_file_name(full_file_name)
@@ -182,8 +186,8 @@ class ClientListener(Thread):
     def read_file(self):
         try:
             full_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         path_to_file = get_directory_from_full_file_name(full_file_name)
@@ -209,14 +213,14 @@ class ClientListener(Thread):
     def copy_file(self):
         try:
             full_source_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         try:
             full_destination_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
 
         path_to_source_file = get_directory_from_full_file_name(full_source_file_name)
@@ -257,8 +261,8 @@ class ClientListener(Thread):
                 send_command_to_storage_server(storage[storage_index], CMD_COPY_FILE,
                                                [source_file.id, destination_file.id])
                 break
-            except Exception as e:
-                logger.info(str(e))
+            except Exception as ex:
+                logger.info(str(ex))
                 storage_index += 1
                 if storage_index >= len(storage):
                     storage_index = 0
@@ -268,31 +272,31 @@ class ClientListener(Thread):
     def delete_file(self):
         try:
             full_file_name = receive_str(self.sock)
-        except Exception as e:
-            logger.info(str(e))
+        except Exception as ex:
+            logger.info(str(ex))
             return
         path_to_file = get_directory_from_full_file_name(full_file_name)
         if path_to_file not in directories:
             logger.info('directory %s does not exist' % path_to_file)
             send_int32(self.sock, CODE_DIRECTORY_NOT_EXIST)
             return
-        dir = directories[path_to_file]
+        d = directories[path_to_file]
         file_name = get_last(full_file_name)
-        if file_name not in dir.files:
+        if file_name not in d.files:
             logger.info('file %s does not exist' % file_name)
             send_int32(self.sock, CODE_FILE_NOT_EXIST)
             return
-        file = dir.files[file_name]
-        del dir.files[file_name]
+        file = d.files[file_name]
+        del d.files[file_name]
         for s in storage:
             send_command_to_storage_server(s, CMD_DELETE_FILE, [file.id])
         send_int32(self.sock, CODE_OK)
 
     def run(self):
         try:
-            cmd = web_to_int(self.sock.recv(32))
-        except Exception as e:
-            logger.info(str(e))
+            cmd = receive_int32(self.sock)
+        except Exception as ex:
+            logger.info(str(ex))
             self._close()
             return
 
@@ -353,9 +357,9 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', NAMING_SERVER_PORT))
-    sock.listen()
+    sock.listen(backlog=CONNECTIONS_QUEUE_SIZE)
 
-    threading.Thread(target=ping_storages).start()
+    threading.Thread(target=ping_storage).start()
 
     while True:
         logger.info('naming server listening for client')
@@ -363,8 +367,8 @@ def main():
         clients.append(con)
         name = 'da_client'
         logger.info(name + ' connected from ' + str(address[0]))
-        clientListener = ClientListener(name, con)
-        clientListener.start()
+        client_listener = ClientListener(name, con)
+        client_listener.start()
 
 
 if __name__ == "__main__":

@@ -1,11 +1,12 @@
 import os
+import socket
 
 from constants import BUFFER_SIZE
 from logs import logger
 from web_format_converter import web_to_int
 
 
-def receive_str(sock):
+def receive_str(sock: socket.socket):
     value_size = web_to_int(sock.recv(32))
     if value_size is None:
         raise Exception('error during string size reading')
@@ -17,15 +18,15 @@ def receive_str(sock):
     return str(value)
 
 
-def receive_int32(sock):
+def receive_int32(sock: socket.socket):
     return web_to_int(sock.recv(32))
 
 
-def receive_int64(sock):
+def receive_int64(sock: socket.socket):
     return web_to_int(sock.recv(64))
 
 
-def receive_file(sock, file_name, root_dir):
+def receive_file(sock: socket.socket, file_name: str, root_dir: str):
     file_size = web_to_int(sock.recv(64))
 
     if file_size is None:
