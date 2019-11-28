@@ -1,8 +1,6 @@
 import os
 import socket
 
-from requests import get
-
 from constants import CLIENT_ROOT_PATH, NAMING_SERVER_IP, NAMING_SERVER_PORT
 from logs import logger
 from receiver import receive_int32, receive_str
@@ -29,30 +27,20 @@ def delete_file(sock: socket.socket, file_name: str):
     return True
 
 
-def get_ip():
-    return get('https://api.ipify.org').text
-
-
 def ping_as_storage(sock: socket.socket):
     send_int32(sock, CMD_PING_AS_STORAGE)
-    ip = get_ip()
-    send_str(sock, ip)
     try:
-        code = receive_int32(sock)
+        port = receive_int32(sock)
     except Exception as e:
         logger.info(str(e))
-        return False
-    if code != CODE_OK:
-        logger.info('error with code %d' % code)
-        return False
-    logger.info('ping is successful')
-    return True
+        return None
+    logger.info('allocated storage server port: %d' % port)
+    return port
 
 
-def confirm_file_upload(sock: socket.socket, file_id: str):
+def confirm_file_upload(sock: socket.socket, port: int, file_id: str):
     send_int32(sock, CMD_CONFIRM_FILE_UPLOAD)
-    ip = get_ip()
-    send_str(sock, ip)
+    send_int32(sock, port)
     send_str(sock, file_id)
     try:
         code = receive_int32(sock)
@@ -70,7 +58,7 @@ def get_storage(sock: socket.socket):
     storage = []
     for i in range(size):
         try:
-            storage.append(receive_str(sock))
+            storage.append(receive_int32(sock))
         except Exception as e:
             logger.info(str(e))
             return False
@@ -81,7 +69,7 @@ def get_storage(sock: socket.socket):
 
 def write_file(sock: socket.socket, file_name: str):
     if not os.path.exists(os.path.join(CLIENT_ROOT_PATH, file_name)):
-        logger.info('error "file does not exist" received after sending "write_file" from naming server client')
+        logger.info('error "file does not exist" received')
         return False
 
     send_int32(sock, CMD_WRITE_FILE)
@@ -198,15 +186,16 @@ def move_file(sock: socket.socket, file_name: str, new_path: str):
 
 def send_command_to_naming_server(cmd: int, args: list):
     host = NAMING_SERVER_IP
-    port = NAMING_SERVER_PORT
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.connect((host, port))
+    sock.connect((host, NAMING_SERVER_PORT))
+
+    logger.info('send command %d to naming server' % cmd)
 
     result = None
-    if cmd == CMD_CONFIRM_FILE_UPLOAD and len(args) == 1:
-        result = confirm_file_upload(sock, args[0])
+    if cmd == CMD_CONFIRM_FILE_UPLOAD and len(args) == 2:
+        result = confirm_file_upload(sock, args[0], args[1])
     elif cmd == CMD_GET_STORAGE and len(args) == 0:
         result = get_storage(sock)
     elif cmd == CMD_WRITE_FILE and len(args) == 1:
@@ -234,7 +223,7 @@ def send_command_to_naming_server(cmd: int, args: list):
     elif cmd == CMD_PING_AS_STORAGE and len(args) == 0:
         result = ping_as_storage(sock)
     else:
-        logger.info('Command-arguments combination unrecognized')
+        logger.info('error reading command %d with args %s' % (cmd, str(args)))
 
     sock.close()
     return result

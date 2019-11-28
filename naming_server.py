@@ -2,7 +2,7 @@ import socket
 import uuid
 from threading import Thread
 
-from constants import PING_SERVERS_SECONDS, NAMING_SERVER_PORT
+from constants import PING_SERVERS_SECONDS, NAMING_SERVER_PORT, STORAGE_SERVER_STARTING_PORT
 from naming_server_directories import get_prev, delete_directory, reset_directories, get_last, directories, \
     check_directory, read_directory, make_directory, Directory
 from receiver import receive_str, receive_int64, receive_int32
@@ -32,14 +32,14 @@ class File:
 
 def ping_storage():
     while True:
-        available_storages = []
+        available_storage = []
         for st in storage:
             if not send_command_to_storage_server(st, CMD_PING_AS_NAMING, []):
-                logger.info('lost ' + st)
+                logger.info('lost %d' % st)
                 storage.remove(st)
             else:
-                available_storages.append(st)
-        logger.info('available storage: %s' % str(available_storages))
+                available_storage.append(st)
+        logger.info('available storage: %s' % str(available_storage))
         time.sleep(PING_SERVERS_SECONDS)
 
 
@@ -87,11 +87,9 @@ def move_file(file_path: str, new_dir: str):
 
 class ClientListener(Thread):
 
-    def __init__(self, name: str, sock: socket.socket):
+    def __init__(self, sock: socket.socket):
         super().__init__(daemon=True)
         self.sock = sock
-        self.name = name
-        self.path = name
 
     def _close(self):
         clients.remove(self.sock)
@@ -101,29 +99,23 @@ class ClientListener(Thread):
     def get_storage(self):
         send_int32(self.sock, len(storage))
         for i in range(len(storage)):
-            send_str(self.sock, storage[i])
+            send_int32(self.sock, storage[i])
 
     def ping_as_storage(self):
-        try:
-            ip = receive_str(self.sock)
-        except Exception as ex:
-            logger.info(str(ex))
-            return
-
-        send_int32(self.sock, CODE_OK)
-
-        storage.append(ip)
-        logger.info('%s storage connected' % ip)
+        port = STORAGE_SERVER_STARTING_PORT + len(storage)
+        send_int32(self.sock, STORAGE_SERVER_STARTING_PORT + len(storage))
+        storage.append(port)
+        logger.info('%d storage connected' % port)
 
         for d in directories.values():
             for f in d.files.values():
-                send_command_to_storage_server(ip, CMD_REPLICATE_FILE, [storage[0], f.id])
+                send_command_to_storage_server(port, CMD_REPLICATE_FILE, [storage[0], f.id])
 
     ''' Files Section '''
 
     def confirm_file_upload(self):
         try:
-            ip = receive_str(self.sock)
+            port = receive_int32(self.sock)
         except Exception as ex:
             logger.info(str(ex))
             return
@@ -144,9 +136,9 @@ class ClientListener(Thread):
         logger.info('file "%s" confirmed' % file.name)
 
         for s in storage:
-            if s != ip:
-                logger.info('sent request to %s to replicate file "%s" from %s' % (s, file_id, ip))
-                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [ip, file.id])
+            if s != port:
+                logger.info('sent request to %d to replicate file "%s" from %d' % (s, file_id, port))
+                send_command_to_storage_server(s, CMD_REPLICATE_FILE, [port, file.id])
 
         send_int32(self.sock, CODE_OK)
 
@@ -255,17 +247,8 @@ class ClientListener(Thread):
             destination_file = File(destination_file_name, source_file.size)
             destination_directory.files[destination_file_name] = destination_file
 
-        storage_index = 0
-        while True:
-            try:
-                send_command_to_storage_server(storage[storage_index], CMD_COPY_FILE,
-                                               [source_file.id, destination_file.id])
-                break
-            except Exception as ex:
-                logger.info(str(ex))
-                storage_index += 1
-                if storage_index >= len(storage):
-                    storage_index = 0
+        for s in storage:
+            send_command_to_storage_server(s, CMD_COPY_FILE, [source_file.id, destination_file.id])
 
         send_int32(self.sock, CODE_OK)
 
@@ -300,7 +283,7 @@ class ClientListener(Thread):
             self._close()
             return
 
-        logger.info("Received " + str(cmd) + " from " + self.name)
+        logger.info("received %d" % cmd)
 
         if cmd == CMD_INIT:
             ret = initialize()
@@ -365,9 +348,8 @@ def main():
         logger.info('naming server listening for client')
         con, address = sock.accept()
         clients.append(con)
-        name = 'da_client'
-        logger.info(name + ' connected from ' + str(address[0]))
-        client_listener = ClientListener(name, con)
+        logger.info('client connected from %s:%s' % (str(address[0]), str(address[1])))
+        client_listener = ClientListener(con)
         client_listener.start()
 
 

@@ -1,7 +1,7 @@
 import os
 import socket
 
-from constants import CLIENT_ROOT_PATH, STORAGE_SERVER_PORT
+from constants import CLIENT_ROOT_PATH, NAMING_SERVER_IP
 from logs import logger
 from receiver import receive_int32, receive_str, receive_file
 from sender import send_int32, send_str, send_file
@@ -17,9 +17,9 @@ def ping_as_naming(sock):
     return True
 
 
-def replicate_file(sock: socket.socket, address: str, file_name: str):
+def replicate_file(sock: socket.socket, port: int, file_name: str):
     send_int32(sock, CMD_REPLICATE_FILE)
-    send_str(sock, address)
+    send_int32(sock, port)
     send_str(sock, file_name)
     code = receive_int32(sock)
     if code != CODE_OK:
@@ -96,21 +96,20 @@ def write_file(sock, path_to_source_file: str, path_to_destination_file: str, ro
     return True
 
 
-def send_command_to_storage_server(host: str, cmd: int, args):
+def send_command_to_storage_server(port: int, cmd: int, args):
     if args is None:
         args = []
-
-    port = STORAGE_SERVER_PORT
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     try:
-        logger.info('sends command to storage server %s' % host)
-        sock.connect((host, port))
+        sock.connect((NAMING_SERVER_IP, port))
     except Exception as e:
         logger.info(str(e))
         return False
+
+    logger.info('send command %d to storage server on port %d' % (cmd, port))
 
     result = None
 

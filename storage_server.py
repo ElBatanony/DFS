@@ -3,10 +3,10 @@ import shutil
 import socket
 from threading import Thread
 
-from constants import STORAGE_SERVER_ROOT_PATH, STORAGE_SERVER_PORT
+from constants import STORAGE_SERVER_ROOT_PATH
 from logs import initialize_logs, logger
 from naming_server_client import send_command_to_naming_server
-from receiver import receive_str, receive_file
+from receiver import receive_str, receive_file, receive_int32
 from sender import send_int32, send_file
 from status_codes import CMD_READ_FILE, CODE_OK, CODE_FILE_NOT_EXIST, CMD_CONFIRM_FILE_UPLOAD, CMD_WRITE_FILE, \
     CMD_COPY_FILE, CMD_DELETE_FILE, CMD_REPLICATE_FILE, CMD_PING_AS_NAMING, CMD_PING_AS_STORAGE
@@ -27,7 +27,7 @@ class ClientListener(Thread):
     def replicate_file(self):
         logger.info('received replication command')
         try:
-            source_address = receive_str(self.sock)
+            p = receive_int32(self.sock)
         except Exception as ex:
             logger.info(str(ex))
             self._close()
@@ -38,8 +38,8 @@ class ClientListener(Thread):
             logger.info(str(ex))
             self._close()
             return
-        logger.info('received command to replicate file "%s" from %s' % (file_name, source_address))
-        send_command_to_storage_server(source_address, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
+        logger.info('received command to replicate file "%s" from %d' % (file_name, p))
+        send_command_to_storage_server(p, CMD_READ_FILE, [file_name, file_name, STORAGE_SERVER_ROOT_PATH])
         send_int32(self.sock, CODE_OK)
 
     def ping_as_naming(self):
@@ -98,10 +98,9 @@ class ClientListener(Thread):
             self._close()
             return
         send_int32(self.sock, CODE_OK)
-        send_command_to_naming_server(CMD_CONFIRM_FILE_UPLOAD, [file_name])
+        send_command_to_naming_server(CMD_CONFIRM_FILE_UPLOAD, [port, file_name])
 
     def read_file(self):
-        logger.info('received read command')
         try:
             file_name = receive_str(self.sock)
         except Exception as ex:
@@ -120,9 +119,14 @@ class ClientListener(Thread):
         send_file(self.sock, file_name, STORAGE_SERVER_ROOT_PATH)
 
     def run(self):
-        command_code = web_to_int(self.sock.recv(32))
+        try:
+            command_code = receive_int32(self.sock)
+        except Exception as ex:
+            logger.info(str(ex))
+            self.sock.close()
+            return
 
-        logger.info('Received ' + str(command_code) + ' from ' + self.name)
+        logger.info('received %d from %s' % (command_code, self.name))
 
         if command_code == CMD_WRITE_FILE:
             self.write_file()
@@ -141,15 +145,19 @@ class ClientListener(Thread):
         self.sock.close()
 
 
+port = 0
+
+
 def main():
+    global port
     if not os.path.isdir(STORAGE_SERVER_ROOT_PATH):
         os.mkdir(STORAGE_SERVER_ROOT_PATH)
 
-    send_command_to_naming_server(CMD_PING_AS_STORAGE, [])
+    port = send_command_to_naming_server(CMD_PING_AS_STORAGE, [])
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', STORAGE_SERVER_PORT))
+    sock.bind(('', port))
     sock.listen()
 
     while True:
