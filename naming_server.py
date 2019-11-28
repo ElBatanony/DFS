@@ -2,7 +2,7 @@ import socket
 import uuid
 from threading import Thread
 
-from constants import PING_SERVERS_SECONDS, NAMING_SERVER_PORT, CONNECTIONS_QUEUE_SIZE
+from constants import PING_SERVERS_SECONDS, NAMING_SERVER_PORT
 from naming_server_directories import get_prev, delete_directory, reset_directories, get_last, directories, \
     check_directory, read_directory, make_directory, Directory
 from receiver import receive_str, receive_int64, receive_int32
@@ -357,7 +357,7 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', NAMING_SERVER_PORT))
-    sock.listen(backlog=CONNECTIONS_QUEUE_SIZE)
+    sock.listen()
 
     threading.Thread(target=ping_storage).start()
 

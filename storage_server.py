@@ -3,7 +3,7 @@ import shutil
 import socket
 from threading import Thread
 
-from constants import STORAGE_SERVER_ROOT_PATH, STORAGE_SERVER_PORT, CONNECTIONS_QUEUE_SIZE
+from constants import STORAGE_SERVER_ROOT_PATH, STORAGE_SERVER_PORT
 from logs import initialize_logs, logger
 from naming_server_client import send_command_to_naming_server
 from receiver import receive_str, receive_file
@@ -150,7 +150,7 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', STORAGE_SERVER_PORT))
-    sock.listen(backlog=CONNECTIONS_QUEUE_SIZE)
+    sock.listen()
 
     while True:
         connection, address = sock.accept()
