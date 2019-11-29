@@ -102,6 +102,17 @@ class ClientListener(Thread):
             send_int32(self.sock, storage[i])
 
     def ping_as_storage(self):
+        port = STORAGE_SERVER_STARTING_PORT
+
+        while True:
+            found = False
+            for s in storage:
+                if s == port:
+                    found = True
+            if found is False:
+                break
+            port += 1
+
         port = STORAGE_SERVER_STARTING_PORT + len(storage)
         send_int32(self.sock, STORAGE_SERVER_STARTING_PORT + len(storage))
         storage.append(port)
