@@ -11,7 +11,7 @@ def open_socket(ip, port):
     try :
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.settimeout(5) # make longer for large uploads
+        #sock.settimeout(19) # make longer for large uploads
         sock.connect((ip, port))
         return sock
     except Exception as e:

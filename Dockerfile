@@ -13,5 +13,3 @@ ADD constants_and_codes.py .
 
 RUN apt-get -y update
 RUN apt-get -y install python3
-
-

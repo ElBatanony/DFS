@@ -36,6 +36,7 @@ def ping_storages():
             storage_sock = open_socket(storage_server_ip, STORAGE_SERVER_PORT)
             if not storage_sock:
                 storage_servers.remove(storage_server_ip)
+                print('Lost storage server: ' + storage_server_ip)
                 continue
             
             send_code(storage_sock, CMD_PING_FROM_NAMING)

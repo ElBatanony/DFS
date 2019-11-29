@@ -9,10 +9,13 @@ from helpers import *
 import random
 
 def ping_naming_server():
+    print('Attempting to contact naming server.')
     naming_server_sock = open_socket(NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
     while not naming_server_sock:
+        print('Could not connect to naming server. Pining again after 20 seconds.')
         time.sleep(20)
         naming_server_sock = open_socket(NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
+    print('Connected to naming server!')
     send_code(naming_server_sock, CMD_PING_FROM_STORAGE)
     ret = receive_code(naming_server_sock)
     if ret != CODE_OK:
@@ -97,7 +100,7 @@ def replicate_file(sock):
     send_code(source_storage_sock, CMD_READ_FILE)
     send_str(source_storage_sock, file_name)
     ret = receive_code(source_storage_sock)
-    if ret != FILE_EXISTS_ON_STORAGE_SERVER:
+    if ret != CODE_OK:
         print("File to replicate does not exist on source storage server.")
         return
     receive_file(source_storage_sock, file_path)
