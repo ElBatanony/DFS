@@ -19,6 +19,7 @@ def ping_naming_server():
     send_code(naming_server_sock, CMD_PING_FROM_STORAGE)
     ret = receive_code(naming_server_sock)
     if ret != CODE_OK:
+        print('Naming server sending wrong code at init.')
         return False
     return True
 
@@ -93,6 +94,7 @@ def copy_file(sock):
 def replicate_file(sock):
     source_address = receive_str(sock)
     file_name = receive_str(sock)
+    print('Received replication request')
 
     file_path = STORAGE_SERVER_ROOT_PATH + '/' + file_name
 
@@ -143,6 +145,7 @@ if __name__ == "__main__":
         os.mkdir(STORAGE_SERVER_ROOT_PATH)
 
     if ping_naming_server():
+        print('Storage server ready!')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(('', STORAGE_SERVER_PORT))

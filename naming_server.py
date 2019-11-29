@@ -50,14 +50,22 @@ def ping_from_storage(sock, ip):
     storage_servers.append(ip)
     print('Storage server ' + ip + ' connected.')
     send_code(sock, CODE_OK)
+    time.sleep(3)
+    replicate_files(ip)
 
-    if len( storage_servers ) > 0:
+def replicate_files(ip):
+    if len( storage_servers ) > 1:
+        if ip == storage_servers[0]:
+            print('whoops')
         for dir in directories.values():
             for f in dir.files.values():
                 storage_sock = open_socket(ip, STORAGE_SERVER_PORT)
-                send_code(storage_sock, CMD_REPLICATE_FILE)
-                send_str(storage_sock, storage_servers[0])
-                send_str(storage_sock, f.id)                
+                if storage_sock: 
+                    send_code(storage_sock, CMD_REPLICATE_FILE)
+                    send_str(storage_sock, storage_servers[0])
+                    send_str(storage_sock, f.id)
+                else:
+                    print('Can not push replications to new storage server. Can not connect.')               
 
 def confirm_file_upload(sock, ip):
     file_id = receive_str(sock)
