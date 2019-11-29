@@ -1,6 +1,7 @@
 import shutil
 import socket
 from threading import Thread
+import time
 
 from constants_and_codes import *
 from helpers import *
@@ -9,8 +10,9 @@ import random
 
 def ping_naming_server():
     naming_server_sock = open_socket(NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
-    if not naming_server_sock:
-        return False
+    while not naming_server_sock:
+        time.sleep(20)
+        naming_server_sock = open_socket(NAMING_SERVER_IP, int(NAMING_SERVER_PORT))
     send_code(naming_server_sock, CMD_PING_FROM_STORAGE)
     ret = receive_code(naming_server_sock)
     if ret != CODE_OK:
