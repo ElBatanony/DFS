@@ -27,4 +27,4 @@ _(all file names should be related to **client_files** folder)_
 
 ### Architecture
 
-![Architecture Diagram]()
+![Architecture Diagram](https://github.com/ElBatanony/DFS/blob/master/ArchitectureDiagram.png)
