@@ -4,7 +4,7 @@
 
 1. Go to repository root directory
 2. Open terminal in this directory and run **python run super_client.py**
-3. Place files to upload in client_files folder
+3. Place files to upload in **client_files** folder
 
 Use following commands to work with DFS:
 
