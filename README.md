@@ -1,6 +1,6 @@
 # Distributed File System
 
-Usage:
+### Usage
 
 1. Go to repository root directory
 2. Open terminal in this directory and run **python run super_client.py**
@@ -24,3 +24,7 @@ _(all file names should be related to **client_files** folder)_
 - ***mkdir <directory_name>*** creates new directory
 - ***rmdir <directory_name> r(optional)*** remove directory _(r - remove recursively)_
 - ***exit*** closes the client
+
+### Architecture
+
+![Architecture Diagram]()
