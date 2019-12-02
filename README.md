@@ -55,9 +55,13 @@ Launch Template for Autoscaling group.
 ***The script:***
 
 #!/bin/bash
+
 sudo apt update
+
 sudo apt install -y docker.io
+
 sudo docker pull elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
+
 sudo docker run -p 8800:8800 -p 8801:8801 -it elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
 
 
