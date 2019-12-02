@@ -42,3 +42,31 @@ Example of writing:
 ### Communication protocols
 
 All data is transfered via TCP protocol.
+
+On AWS
+
+***Used:***
+- EC2 instance with Ubuntu
+- Autoscaling group for supporting fixed amount of nodes
+- VPC
+
+Launch Template for Autoscaling group.
+
+***The script:***
+
+#!/bin/bash
+sudo apt update
+sudo apt install -y docker.io
+sudo docker pull elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
+sudo docker run -p 8800:8800 -p 8801:8801 -it elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
+
+
+***VPC:***
+
+Should be used the same for all instances, involved in DFS.
+
+
+What happens inside of instance, when it starts?
+
+It starts the script, that were stated as User Data, while we created an instance.
+Script installs ubuntu and runs a container with image with our DFS.
