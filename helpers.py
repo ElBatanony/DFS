@@ -11,7 +11,7 @@ def open_socket(ip, port):
     try :
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.settimeout(10) # make longer for large uploads
+        #sock.settimeout(10) # make longer for large uploads
         sock.connect((ip, port))
         return sock
     except Exception as e:
@@ -72,5 +72,5 @@ def receive_file(sock, file_path):
             if f is None:
                 raise Exception('error during file transfer')
             sw.write(f)
-
+    
     print('File received!')

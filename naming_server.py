@@ -40,14 +40,18 @@ def ping_storages():
                 continue
             
             send_code(storage_sock, CMD_PING_FROM_NAMING)
-            ret = receive_code(storage_sock)
-            if ret != CODE_OK:
-                storage_servers.remove(storage_server_ip)
-                print('Lost storage server: ' + storage_server_ip)
+            try:
+                ret = receive_code(storage_sock)
+                if ret != CODE_OK:
+                    storage_servers.remove(storage_server_ip)
+                    print('Lost storage server: ' + storage_server_ip)
+            except Exception as ex:
+                print(str(ex))
         time.sleep(PING_SERVERS_SECONDS)
 
 def ping_from_storage(sock, ip):
-    storage_servers.append(ip)
+    if ip not in storage_servers: # maybe reconnected
+        storage_servers.append(ip)
     print('Storage server ' + ip + ' connected.')
     send_code(sock, CODE_OK)
     time.sleep(3)
@@ -199,7 +203,7 @@ def file_info(sock):
     send_code(sock, CODE_OK)
 
     f = file_dir.files[file_name]
-    ret = 'name: {}, size{} bytes, id: {}'.format(f.name, str(f.size), f.id)
+    ret = 'name: {}, size: {} bytes, id: {}'.format(f.name, str(f.size), f.id)
     send_str(sock, ret)
 
 
