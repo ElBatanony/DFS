@@ -98,7 +98,7 @@ def write_file(sock, file_name):
 
     send_code(sock, CMD_WRITE_FILE)
     send_str(sock, storage_path_plus() + file_name)
-    send_int64(sock, os.path.getsize(file_path_local))
+    send_int32(sock, os.path.getsize(file_path_local))
 
     ret = receive_code(sock)
     if ret != CODE_OK:
@@ -170,7 +170,7 @@ def move_file(sock, file_name, new_dir):
         print('The directory you trying to move file to does not exist. Maybe try "ls" at that location.')
         return
 
-    send_int32(sock, CMD_FILE_MOVE)
+    send_code(sock, CMD_FILE_MOVE)
     send_str(sock, storage_path_plus() + file_name )
     ret = receive_code(sock)
     if ret != CODE_OK:

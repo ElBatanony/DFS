@@ -131,7 +131,7 @@ def read_file(sock):
 
 def write_file(sock):
     file_path = receive_str(sock)
-    file_size = receive_int64(sock)
+    file_size = receive_int32(sock)
 
     file_dir_path = get_prev(file_path)
 
