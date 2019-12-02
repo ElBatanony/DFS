@@ -17,7 +17,7 @@ def send_int32(sock, value):
 
 
 def send_int64(sock, value):
-    sock.send(int32_to_web(value))
+    sock.send(int64_to_web(value))
 
 
 def send_file(sock, file_name, root_dir):
