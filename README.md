@@ -54,6 +54,8 @@ Launch Template for Autoscaling group.
 
 ***The script:***
 
+**Docker**
+
 #!/bin/bash
 
 sudo apt update
@@ -63,6 +65,16 @@ sudo apt install -y docker.io
 sudo docker pull elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
 
 sudo docker run -p 8800:8800 -p 8801:8801 -it elbatanony/dfs (https://hub.docker.com/repository/docker/elbatanony/dfs):latest
+
+**Docker Swarm**
+
+#!/bin/bash
+
+sudo apt update
+
+sudo apt install -y docker.io
+
+sudo docker swarm join --token SWMTKN-1-4v90fuesdwqvcrgobpfcbm14994jm2bfmnkfydby8kksz5rjyj-cnnya9bykcuznn10wqyigwgt3 172.31.17.68:2377
 
 
 ***VPC:***
@@ -74,3 +86,6 @@ What happens inside of instance, when it starts?
 
 It starts the script, that were stated as User Data, while we created an instance.
 Script installs ubuntu and runs a container with image with our DFS.
+
+***Test cases:***
+https://docs.google.com/document/d/1pO7IuF4_Fk9_CNuYmd-MweUc02kcu-4qChPsDYm6Mvk/edit?usp=sharing
