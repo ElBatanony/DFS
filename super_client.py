@@ -2,6 +2,7 @@ import socket
 import shutil
 from pathlib import Path
 import os
+import sys
 
 from constants_and_codes import *
 from helpers import *
@@ -29,7 +30,6 @@ def initialize(sock):
         shutil.rmtree(CLIENT_ROOT_PATH)
     except OSError as e:
         print("Error deleting client files directory: %s - %s." % (e.filename, e.strerror))
-        return
 
     try:  # Recreate the local dfs directory
         os.mkdir(CLIENT_ROOT_PATH)

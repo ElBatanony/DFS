@@ -70,7 +70,7 @@ def send_file(sock, file_path):
             if percentage > 100:
                 percentage = 100
 
-            print(str(percentage) + '%')
+            print('Uploading ' + str(percentage) + '%', end='\r')
 
     print('%s sent' % file_path)
 
@@ -90,6 +90,8 @@ def receive_file(sock, file_path):
             file = sock.recv(buffer)
             received_size += buffer
             send_int32(sock, CODE_OK)
+            percentage = int(100 * received_size / file_size)
+            print('Downloading ' + str(percentage) + '%', end='\r')
             if file is None:
                 raise Exception('error during file transfer')
             sw.write(file)
